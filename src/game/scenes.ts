@@ -109,7 +109,6 @@ export const SCENES: Record<string, Scene> = {
     pickups: pickupRow(["Code", "Design", "Music"]),
     ambient: "stars",
     narration: [],
-    skill: "self-taught",
   },
 
   grp: {
