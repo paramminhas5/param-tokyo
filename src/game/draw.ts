@@ -509,8 +509,94 @@ export function drawProp(ctx: Ctx, kind: PropKind, x: number, y: number, t: numb
       ctx.fillRect(x + 12, g - 30, 16, 16);
       ctx.fillStyle = "#fbbf24"; ctx.fillRect(x + 16, g - 26, 8, 8);
       break;
+
+    case "rope": {
+      // hangs from top of canvas (y=0) down to ground at x
+      ctx.fillStyle = "#a87a4a";
+      for (let yy = 0; yy < g - 6; yy += 2) ctx.fillRect(x + 4, yy, 2, 1);
+      ctx.fillStyle = "#6b4a2a";
+      for (let yy = 1; yy < g - 6; yy += 4) ctx.fillRect(x + 4, yy, 2, 1);
+      // anchor knot at top
+      ctx.fillStyle = "#0a0510"; ctx.fillRect(x + 2, 0, 6, 4);
+      break;
+    }
+    case "exitRope": {
+      // hangs from ground down to the bottom of the canvas — implies descent
+      ctx.fillStyle = "#a87a4a";
+      for (let yy = g - 4; yy < LH; yy += 2) ctx.fillRect(x + 4, yy, 2, 1);
+      ctx.fillStyle = "#6b4a2a";
+      for (let yy = g - 4; yy < LH; yy += 4) ctx.fillRect(x + 4, yy, 2, 1);
+      ctx.fillStyle = "#0a0510"; ctx.fillRect(x + 2, g - 6, 6, 4);
+      break;
+    }
+    case "arcadeCabinet": {
+      // body
+      ctx.fillStyle = "#1a1040"; ctx.fillRect(x, g - 40, 28, 40);
+      ctx.fillStyle = "#0a0510"; ctx.fillRect(x, g - 40, 28, 2); ctx.fillRect(x, g - 1, 28, 1);
+      // screen
+      ctx.fillStyle = "#0a0510"; ctx.fillRect(x + 3, g - 36, 22, 14);
+      // animated screen content
+      const blink = (Math.floor(t / 12) % 2);
+      ctx.fillStyle = blink ? "#e84393" : "#22d3ee";
+      ctx.fillRect(x + 7, g - 32, 14, 6);
+      ctx.fillStyle = "#fbbf24"; ctx.fillRect(x + 11, g - 30, 6, 2);
+      // joystick
+      ctx.fillStyle = "#0a0510"; ctx.fillRect(x + 6, g - 18, 2, 6);
+      ctx.fillStyle = "#e84393"; ctx.fillRect(x + 5, g - 20, 4, 4);
+      // buttons
+      ctx.fillStyle = "#fbbf24"; ctx.fillRect(x + 15, g - 16, 3, 3); ctx.fillRect(x + 20, g - 16, 3, 3);
+      // marquee
+      ctx.fillStyle = "#fbbf24"; ctx.fillRect(x, g - 44, 28, 4);
+      ctx.fillStyle = "#0a0510"; ctx.font = "5px monospace"; ctx.fillText("PLAY", x + 7, g - 41);
+      // pulsing glow
+      const glow = 0.18 + 0.18 * Math.abs(Math.sin(t / 10));
+      ctx.fillStyle = `rgba(232,67,147,${glow})`;
+      ctx.fillRect(x - 4, g - 44, 36, 44);
+      break;
+    }
+    case "powerLine":
+      ctx.fillStyle = "#0a0510";
+      ctx.fillRect(x + 4, g - 40, 1, 40);
+      ctx.fillRect(x - 24, g - 36, 48, 1);
+      ctx.fillRect(x - 24, g - 32, 48, 1);
+      break;
+    case "dog":
+      ctx.fillStyle = "#6b4a2a"; ctx.fillRect(x, g - 6, 10, 6);
+      ctx.fillRect(x + 8, g - 9, 4, 4);
+      ctx.fillStyle = "#0a0510"; ctx.fillRect(x + 10, g - 8, 1, 1);
+      ctx.fillStyle = "#6b4a2a"; ctx.fillRect(x - 2, g - 9, 2, 3);
+      break;
+    case "djDeck":
+      ctx.fillStyle = "#1a1a3e"; ctx.fillRect(x, g - 10, 30, 10);
+      ctx.fillStyle = "#0a0510"; ctx.fillRect(x + 3, g - 9, 9, 7); ctx.fillRect(x + 18, g - 9, 9, 7);
+      ctx.fillStyle = "#fbbf24"; ctx.fillRect(x + 6, g - 6, 3, 1); ctx.fillRect(x + 21, g - 6, 3, 1);
+      break;
+    case "holoGlobe":
+      ctx.fillStyle = "rgba(34,211,238,0.25)";
+      ctx.beginPath(); ctx.arc(x + 10, g - 20, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#22d3ee";
+      for (let i = 0; i < 4; i++) {
+        const a = (t / 30) + i * Math.PI / 2;
+        ctx.fillRect(x + 10 + Math.cos(a) * 12, g - 20 + Math.sin(a) * 6, 1, 1);
+      }
+      break;
   }
 }
+
+/** Floating outcome pickup token */
+export function drawPickup(ctx: Ctx, x: number, y: number, collected: boolean, t: number, accent: string) {
+  const bob = collected ? 0 : Math.sin((t + x) / 14) * 2;
+  const py = Math.round(y + bob);
+  if (collected) return; // collected tokens disappear from world
+  // glow
+  ctx.fillStyle = `rgba(251,191,36,${0.18 + 0.12 * Math.abs(Math.sin(t / 12))})`;
+  ctx.fillRect(x - 4, py - 4, 16, 16);
+  // body
+  ctx.fillStyle = "#fbbf24"; ctx.fillRect(x, py, 8, 8);
+  ctx.fillStyle = accent; ctx.fillRect(x + 2, py + 2, 4, 4);
+  ctx.fillStyle = "#0a0510"; ctx.fillRect(x + 3, py + 3, 2, 2);
+}
+
 
 /* ---------------- character ---------------- */
 

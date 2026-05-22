@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import type { Chapter } from "@/content/resume";
 import { SKILLS } from "@/content/resume";
 import { MiniGame } from "./MiniGame";
+import { CliffNotesCard } from "./CliffNotesCard";
 import { addSkill, useSkills } from "@/game/state";
+import { collect, isCollected } from "@/game/pickups";
 import { sfx } from "@/game/audio";
-import { SCENES, LW, LH } from "@/game/scenes";
-import { drawBg, drawProp, drawCharacter, drawAmbient, interpPath } from "@/game/draw";
+import { SCENES, LW, LH, GROUND_Y, ROPE_X, EXIT_X } from "@/game/scenes";
+import { drawBg, drawProp, drawCharacter, drawAmbient, drawPickup, interpPath } from "@/game/draw";
 
 interface Props { chapter: Chapter; }
 
@@ -17,19 +19,19 @@ export function ChapterPanel({ chapter }: Props) {
   const rafRef = useRef(0);
   const [progress, setProgress] = useState(0);
   const [showMini, setShowMini] = useState(false);
+  const [, setCollectTick] = useState(0);
   const skills = useSkills();
   const completed = skills.includes(chapter.skill);
   const scene = SCENES[chapter.id];
   const skill = SKILLS[chapter.skill];
 
-  // Scroll progress within section (0..1)
   useEffect(() => {
     const onScroll = () => {
       const el = sectionRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
       const vh = window.innerHeight;
-      const total = rect.height - vh; // sticky scroll range
+      const total = rect.height - vh;
       const passed = -rect.top;
       const p = Math.max(0, Math.min(1, passed / Math.max(1, total)));
       progressRef.current = p;
@@ -44,7 +46,27 @@ export function ChapterPanel({ chapter }: Props) {
     };
   }, []);
 
-  // Render loop
+  // Keyboard: Space launches mini-game when near the arcade cabinet.
+  useEffect(() => {
+    if (!scene) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      const rect = sectionRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const vh = window.innerHeight;
+      const inView = rect.top < vh * 0.6 && rect.bottom > vh * 0.4;
+      if (!inView) return;
+      const pose = interpPath(scene.path, progressRef.current);
+      if (Math.abs(pose.x - scene.arcadeX) < 40) {
+        e.preventDefault();
+        sfx.open();
+        setShowMini(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [scene]);
+
   useEffect(() => {
     if (!scene) return;
     const canvas = canvasRef.current;
@@ -59,51 +81,55 @@ export function ChapterPanel({ chapter }: Props) {
       const p = progressRef.current;
 
       ctx.imageSmoothingEnabled = false;
-      // background
       drawBg(ctx, scene.bg, t, p * 100);
-      // props
+      // entry/exit ropes (always drawn so continuity reads top→bottom)
+      drawProp(ctx, "rope",     ROPE_X - 4, 0, t, 0);
+      drawProp(ctx, "exitRope", EXIT_X - 4, 0, t, 0);
+      // scene props
       for (const pr of scene.props) drawProp(ctx, pr.kind, pr.x, pr.y ?? 0, t, pr.variant ?? 0);
-      // mini-game flag (planted if completed) drawn as in-world arcade sign
-      const px = scene.playX;
-      const py = 188;
-      // flagpole
-      ctx.fillStyle = "#0a0510"; ctx.fillRect(px, py - 30, 1, 30);
-      ctx.fillStyle = completed ? "#22d3ee" : "#e84393";
-      ctx.fillRect(px + 1, py - 30, 10, 7);
-      if (completed) {
-        ctx.fillStyle = "#fbbf24";
-        ctx.fillRect(px + 4, py - 28, 1, 1);
-        ctx.fillRect(px + 5, py - 27, 2, 1);
-        ctx.fillRect(px + 4, py - 26, 4, 1);
-      } else {
-        ctx.fillStyle = "#fff"; ctx.font = "6px monospace";
-        ctx.fillText("?", px + 4, py - 24);
-      }
+      // arcade cabinet (in-world play prompt)
+      drawProp(ctx, "arcadeCabinet", scene.arcadeX, 0, t, 0);
 
-      // ambient particles
+      // pickups
+      const pose = interpPath(scene.path, p);
+      scene.pickups.forEach((pk, i) => {
+        const id = `${chapter.id}:${i}`;
+        const got = isCollected(id);
+        drawPickup(ctx, pk.x, pk.y, got, t, chapter.theme.accent);
+        if (!got && Math.hypot(pose.x - (pk.x + 4), pose.y - (pk.y + 4)) < 14) {
+          if (collect({ id, chapterId: chapter.id, label: pk.label, color: chapter.theme.accent })) {
+            sfx.pickup();
+            setCollectTick((x) => x + 1);
+          }
+        }
+      });
+
       if (scene.ambient) drawAmbient(ctx, scene.ambient, t);
 
-      // character along path
-      const pose = interpPath(scene.path, p);
       const frame = Math.floor(t / 8);
       drawCharacter(ctx, pose.x, pose.y, frame, pose.facing, pose.action, chapter.theme.accent, t);
 
-      // play hint when character is near play flag
-      const near = Math.abs(pose.x - px) < 30 && !completed;
+      // "PRESS ▶" prompt floats above arcade when character is close
+      const near = Math.abs(pose.x - scene.arcadeX) < 36 && !completed;
       if (near) {
         const bob = (Math.floor(t / 10) % 2) ? -1 : 0;
+        const px = scene.arcadeX;
         ctx.fillStyle = "#fbbf24";
-        ctx.fillRect(px - 2, py - 44 + bob, 14, 10);
+        ctx.fillRect(px - 4, GROUND_Y - 60 + bob, 36, 12);
         ctx.fillStyle = "#0a0510"; ctx.font = "7px monospace";
-        ctx.fillText("PLAY", px - 1, py - 36 + bob);
-        // arrow
+        ctx.fillText("PRESS ▶", px, GROUND_Y - 52 + bob);
         ctx.fillStyle = "#fbbf24";
-        ctx.fillRect(px + 4, py - 34 + bob, 2, 2); ctx.fillRect(px + 3, py - 33 + bob, 4, 1);
+        ctx.fillRect(px + 14, GROUND_Y - 48 + bob, 4, 4);
+      }
+      if (completed) {
+        const px = scene.arcadeX;
+        ctx.fillStyle = "#22d3ee"; ctx.font = "7px monospace";
+        ctx.fillText("✓ DONE", px, GROUND_Y - 50);
       }
 
-      // subtle scanlines overlay (in canvas, cheap)
-      ctx.fillStyle = "rgba(0,0,0,0.08)";
-      for (let y = 0; y < LH; y += 2) ctx.fillRect(0, y, LW, 1);
+      // gentle scanlines
+      ctx.fillStyle = "rgba(0,0,0,0.06)";
+      for (let y = 0; y < LH; y += 3) ctx.fillRect(0, y, LW, 1);
 
       rafRef.current = requestAnimationFrame(render);
     };
@@ -111,7 +137,6 @@ export function ChapterPanel({ chapter }: Props) {
     return () => cancelAnimationFrame(rafRef.current);
   }, [scene, chapter, completed]);
 
-  // step sfx
   useEffect(() => {
     if (!scene || completed) return;
     const t = setTimeout(() => sfx.step(), 220);
@@ -120,19 +145,19 @@ export function ChapterPanel({ chapter }: Props) {
 
   if (!scene) return null;
 
-  // Check if play prop is reachable now to enable button
   const pose = interpPath(scene.path, progress);
-  const canPlay = Math.abs(pose.x - scene.playX) < 40;
+  const canPlay = Math.abs(pose.x - scene.arcadeX) < 40;
 
   return (
     <section
       ref={sectionRef}
       id={chapter.id}
       className="relative"
-      style={{ height: "180vh" }}
+      style={{ height: "200vh" }}
       aria-label={`${chapter.org} — ${chapter.year}`}
     >
-      <div className="sticky top-0 h-screen w-full overflow-hidden bg-[var(--pm-deep-2)]">
+      <div className="sticky top-0 h-screen w-full overflow-hidden bg-[color:var(--surface-1)]">
+        {/* The pixel-art canvas fills the viewport — text now lives in side cards */}
         <canvas
           ref={canvasRef}
           width={LW}
@@ -141,70 +166,41 @@ export function ChapterPanel({ chapter }: Props) {
           style={{ imageRendering: "pixelated" as never, objectFit: "fill" }}
         />
 
-        {/* Narration boxes positioned in % of viewport (canvas stretches to fill, so percentages match canvas space) */}
-        <div className="absolute inset-0 pointer-events-none">
-          {scene.narration.map((n, i) => (
-            <div
-              key={i}
-              className={
-                n.kind === "title"
-                  ? "absolute font-pixel text-[10px] sm:text-xs text-[var(--pm-gold)] bg-[var(--pm-deep-2)]/85 border-2 border-[var(--pm-gold)] px-2 py-1"
-                  : n.kind === "hook"
-                  ? "absolute font-display text-base sm:text-xl text-white bg-[var(--pm-deep-2)]/80 border-l-4 border-[var(--pm-magenta)] px-3 py-2 leading-tight"
-                  : n.kind === "outcome"
-                  ? "absolute font-mono text-xs text-[var(--pm-gold)] bg-[var(--pm-deep-2)]/80 border border-[var(--pm-gold)] px-2 py-1"
-                  : "absolute font-mono text-xs sm:text-sm text-white/85 bg-[var(--pm-deep-2)]/80 border border-[var(--border)] px-3 py-2 leading-snug"
-              }
-              style={{
-                left: `${n.ax * 100}%`,
-                top: `${n.ay * 100}%`,
-                width: `${n.w * 100}%`,
-                maxWidth: "520px",
-              }}
-            >
-              {n.text}
-            </div>
-          ))}
+        {/* Cliff-notes card slides in from the right; never overlaps the character */}
+        <CliffNotesCard chapter={chapter} progress={progress} />
 
-          {/* Outcomes as in-world signs along bottom */}
-          <div className="absolute bottom-[12%] left-1/2 -translate-x-1/2 flex flex-wrap gap-2 justify-center max-w-[80%]">
-            {chapter.outcomes.slice(0, 3).map((o) => (
-              <span key={o} className="font-mono text-[10px] sm:text-xs text-[var(--pm-gold)] bg-[var(--pm-deep-2)]/85 border border-[var(--pm-gold)] px-2 py-1">
-                ✦ {o}
-              </span>
-            ))}
-          </div>
-
-          {/* Skill earned chip */}
-          <div className="absolute bottom-[4%] left-4 sm:left-6 flex items-center gap-2">
-            <span className="font-pixel text-[8px] sm:text-[9px] text-white/60">SKILL →</span>
-            <span
-              className="font-pixel text-[9px] sm:text-[10px] px-2 py-1"
-              style={{
-                background: completed ? skill.color : "transparent",
-                color: completed ? "#1a0f33" : skill.color,
-                border: `2px solid ${skill.color}`,
-              }}
-            >
-              {completed ? "✓ " : ""}{skill.name}
-            </span>
-          </div>
+        {/* Subtle desktop hint */}
+        <div className="hidden md:block absolute bottom-3 left-1/2 -translate-x-1/2 font-mono text-[10px] text-white/40 tracking-wider">
+          ↓ scroll · {canPlay ? "press space to play" : "walk to the cabinet"}
         </div>
 
-        {/* Play button — pointer-events on, surfaces when character reaches the prop */}
-        <button
-          type="button"
-          onClick={() => { sfx.open(); setShowMini(true); }}
-          disabled={!canPlay && !completed}
-          className={`absolute bottom-[4%] right-4 sm:right-6 font-pixel text-[10px] px-3 py-2 transition-all ${
-            canPlay || completed
-              ? "bg-[var(--pm-gold)] text-[var(--pm-ink)] hover:bg-[var(--pm-magenta)] hover:text-white animate-pulse"
-              : "bg-[var(--pm-deep)] text-white/40 border border-white/20"
-          }`}
-          aria-label={`Play ${chapter.org} mini-game`}
-        >
-          {completed ? "▶ REPLAY" : canPlay ? "▶ PLAY" : "▷ scroll closer"}
-        </button>
+        {/* Fallback Play pill for touch — small, only visible when reachable */}
+        {(canPlay || completed) && (
+          <button
+            type="button"
+            onClick={() => { sfx.open(); setShowMini(true); }}
+            className="md:hidden absolute bottom-4 right-4 font-mono text-xs px-3 py-2 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-foreground)] shadow-md"
+          >
+            {completed ? "▶ replay" : "▶ play"}
+          </button>
+        )}
+
+        {/* Skill chip — bottom left, tiny */}
+        <div className="absolute bottom-3 left-3 flex items-center gap-2 pointer-events-none">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-white/40">
+            {completed ? "earned" : "unlocks"}
+          </span>
+          <span
+            className="font-mono text-[11px] px-2 py-0.5 rounded-sm"
+            style={{
+              background: completed ? skill.color : "transparent",
+              color: completed ? "#0a0a0a" : skill.color,
+              border: `1px solid ${skill.color}`,
+            }}
+          >
+            {skill.name}
+          </span>
+        </div>
       </div>
 
       {showMini && (
