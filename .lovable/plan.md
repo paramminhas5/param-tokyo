@@ -1,81 +1,83 @@
-## Goal
 
-Kill the "stacked sections + box on the side" layout. Turn the whole resume into **one continuous pixel world** that the player-character walks through as you scroll. Text shrinks down to short, punchy callouts that appear in-world (signs, speech bubbles, item pickups) so the game does the storytelling.
+# Graphic-novel playable resume
 
-## The new shape
+Bring back the vertical scroll + readable content, but fuse the character, the world art, and the paragraphs into one continuous illustrated comic where the character lives *inside* the panels with the text.
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│  HUD (sticky top): name · skills earned · sound toggle  │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│         FULL-VIEWPORT PIXEL WORLD (sticky)              │
-│   sky · parallax · ground · props · character           │
-│                                                         │
-│   ▲ tiny overlay callouts fade in/out per "zone"        │
-│   ▲ press-to-play prompt when near a boss flag          │
-│                                                         │
-├─────────────────────────────────────────────────────────┤
-│  Tall invisible scroll track drives world position      │
-│  (no visible section boxes, no side-by-side text)       │
-└─────────────────────────────────────────────────────────┘
-```
+## The shape
 
-One sticky full-bleed canvas. A tall invisible scroll spacer underneath maps scroll progress (0 → 1) to a horizontal+vertical camera path through a single long level. Every chapter is a **zone** on that level, not a DOM section.
+- Restore vertical scroll. One long page, ~9 chapters stacked.
+- Each chapter is a full-bleed "panel" (≈ 100–140vh) with:
+  - A rich pixel-art world filling the panel as the backdrop (not a tiny 16:9 box on the side).
+  - Paragraphs of text laid *into* the panel — on signs, in caption boxes pinned to props, in speech bubbles, in negative-space areas of the art.
+  - The character physically present in the scene, traversing it as you scroll.
+- Panels connect: the ground line, sky gradient, and parallax layers flow continuously between chapters so it reads as one world, not 9 separate cards.
+- Kill the side-by-side "text column + stage column" layout. Text and art share the same canvas.
 
-## Character behavior, contextual to scroll + zone
+## Character behavior (scroll-driven, per panel)
 
-- **Horizontal scroll progress** → walks right (or left when scrolling up). Walk-cycle frame ticks with velocity; idle pose when scroll stops.
-- **Vertical moments** baked into the level path:
-  - Climbs a ladder at the *Iterate* tower
-  - Drops down into the *real-estate* vault
-  - Jumps onto crates at the *SoleSearch* shop
-  - Grabs the mic at the *Cats Can Dance* stage
-- **Facing** flips to face the prop being approached (sign, NPC, item).
-- **Reactions**: tiny emote above head per zone — `!` near a boss flag, `♪` near the mic, `$` near the vault, `★` on skill pickup.
+- The character is rendered into the panel's canvas at a position computed from scroll progress within that panel.
+- Each panel defines a **path** through its world — a sequence of waypoints with `(x, y, action, facing)` — and scroll progress interpolates along it.
+  - Origin: walks across a rooftop, climbs an antenna, sits to type.
+  - GetRightPrice: walks past server racks, stops to grab a falling price tag.
+  - Hab Housing: walks between houses, hands over a key at a sign.
+  - Octo: walks into a lab, sits at a terminal, speech bubble pops.
+  - Investopad: climbs a vault tower, pulls a lever.
+  - SoleSearch: jumps between sneaker platforms, crowd silhouettes cheer.
+  - Fere.ai: walks past agent racks, agents boot up behind him.
+  - Cats Can Dance: walks onstage, dances on the beat, cats appear.
+  - Iterate: assembles modules into a working machine.
+- Facing flips based on the next waypoint. Emotes (`!`, `♪`, `$`, `★`) trigger contextually at waypoints, not on a timer.
 
-## Text → game elements (kill the wall of paragraphs)
+## Richer worlds (this is the big lift)
 
-For each chapter, keep only:
-- **1 sign post** with org + year (rendered in-canvas, pixel font)
-- **1 one-line hook** (~8 words) shown as an overlay caption that fades in when the camera enters the zone, fades out when it leaves
-- **2–3 outcome chips** as collectible pixel items (coins / floppies / trophies) the character visibly picks up
-- **1 skill pickup** (existing system) — touching it triggers the mini-game boss
+Each panel gets a real illustrated scene, not 4 props on a flat ground:
 
-Everything else (long paragraphs, press list, full skill grid) moves to `/cv` so the home page is purely the playable world. A small "📜 READ THE FULL CV" sign at the end of the level links there.
+- **3 parallax layers**: far sky/silhouette, mid buildings/landscape, near foreground props + ground.
+- **Per-chapter set dressing** drawn with the existing pixel primitives, expanded:
+  - Origin → bedroom-on-rooftop: CRT monitor, cassette deck, posters, antenna, stars, moon.
+  - GetRightPrice → server room / shopfronts: price tags falling, barcode signs, conveyor.
+  - Hab Housing → street of houses: for-rent signs, autorickshaw silhouette, broker booths.
+  - Octo → AI lab: terminals, blinking lights, chat bubbles floating up from racks.
+  - Investopad → vault tower: stacked vaults, ladder, ticker tape, pitch-deck papers blowing.
+  - SoleSearch → sneaker arena: stacked sneaker boxes as platforms, stage rig, crowd silhouettes, spotlights.
+  - Fere.ai → agent farm: server racks with glowing terminals, network lines pulsing.
+  - Cats Can Dance → stage at night: mic stand, speakers, cats dancing, equalizer bars.
+  - Iterate → workshop: modular blocks snapping together into a glowing machine.
+- **Animated ambient details**: blinking screens, falling leaves/snow/papers, drifting clouds, flickering signs, pulsing lights — all on the canvas loop.
+- **Lighting per chapter** via tinted overlays + accent glow on the character.
 
-## Zones along the level (left → right)
+## Text inside the panel (graphic-novel layout)
 
-1. Hero spawn — name + tagline as a billboard, "▶ PLAY" prompt
-2. E-commerce shop — shelves, coin pickups
-3. Real-estate tower — climb ladder, vault
-4. Conversational AI lab — server rack, antenna
-5. SoleSearch street — sneakers, crates
-6. Fere.ai trading floor — charts on monitors
-7. Cats Can Dance stage — mic, speakers
-8. End screen — contact mailbox, CV sign, social flags
+Reduce text density vs current `resume.ts`, but keep it readable:
 
-## Technical approach
+- **1 large title block** per panel (year + org + role), styled as a comic chapter title plate, positioned in dead space in the art.
+- **1 hook line** in a bold caption box (the "narration box" in comics).
+- **2 short paragraphs max** in narration boxes pinned to fixed spots in the art (top-left + bottom-right typical), max ~280 chars each. Trim current paragraphs.
+- **Outcome chips** as in-world signs/banners standing on the ground.
+- **Skill earned** as a flag the character plants at the end of the panel.
+- All text uses semantic tokens, sits in pixel-bordered boxes, never overlaps the character's path.
+- Long-form text stays on `/cv`.
 
-- New `WorldScene.tsx`: single sticky canvas, full viewport height, drives a virtual camera over a wide logical world (e.g. `2400×144` logical px).
-- New `useScrollProgress` hook on a tall outer container (`~800vh`) → maps to `cameraX` and triggers per-zone events.
-- Character physics: simple state machine (`walk` / `idle` / `climb` / `jump` / `interact`) driven by zone metadata, not by user input.
-- Overlay layer (DOM, absolutely positioned over canvas) for fading captions + the existing `MiniGame` modal trigger. Captions use the existing pixel font, max ~80 chars.
-- Reuse existing `PixelStage` drawing primitives (`drawProp`, `drawCharacter`, `fillSky`) — extend with `climb` frames, `jump` frames, emote sprites, and pickup sprites.
-- Reuse `game/state.ts` skills + `game/audio.ts` sfx.
-- Delete the per-chapter `ChapterSection` layout from `routes/index.tsx`; replace with `<WorldScene />` + minimal HUD + footer.
-- Move the long-form paragraphs, press list, companies, and skill groups onto `/cv` (already exists) so nothing is lost.
+## Mini-game
 
-## Out of scope for this pass
+Same trigger as before: a "PLAY" prompt appears as an in-world arcade cabinet / sign when the character reaches the skill flag. Click → existing `MiniGame` modal → on win, flag plants and panel marks complete.
 
-- New mini-games (existing ones stay; only the trigger flow changes)
-- Mobile gesture controls beyond scroll (touch-scroll already drives the camera)
-- Audio music bed (keep current sfx only)
+## Files to touch
 
-## Acceptance
+- New `src/components/ChapterPanel.tsx` — full-bleed panel with its own canvas, path, parallax, narration boxes, in-world title plate, outcome banners, skill flag, play prompt.
+- New `src/game/scenes.ts` — per-chapter scene definition: parallax layer descriptors, prop list with `(x, y, kind, variant)`, waypoint path, narration-box positions, animated ambient effects. Extends `resume.ts` data rather than replacing it.
+- Extend `src/components/PixelStage.tsx` drawing helpers (or split into `src/game/draw.ts`) with the new prop variants (CRT, cassette, sneaker box, mic, vault, cat, terminal, crowd silhouette, spotlight, ticker tape, etc.) and parallax layer renderer.
+- Rewrite `src/routes/index.tsx` back to stacked vertical: `<Hud />` + intro plate + `CHAPTERS.map(c => <ChapterPanel chapter={c} />)` + end/contact panel.
+- Trim `src/content/resume.ts` paragraph lengths to fit narration boxes (keep facts; tighten prose). Add optional `title` plate copy if needed.
+- Delete or stop using `src/components/WorldScene.tsx` and the old `src/components/ChapterSection.tsx`.
 
-- Home page is one continuous pixel level, no stacked text/canvas sections.
-- Scrolling moves the character through the world; vertical scroll progress maps to in-world horizontal + vertical motion.
-- Character visibly reacts (faces, climbs, jumps, emotes, picks up items) at each zone.
-- No paragraph of body copy on the home route — only short in-world captions, signs, and chips.
-- Full long-form resume content still reachable via `/cv`.
+## Out of scope
+
+- New mini-games (reuse existing 3 kinds).
+- Audio bed / music.
+- Mobile gesture controls beyond scroll.
+- Changes to `/cv`.
+
+## Open question
+
+Panel height target: ~120vh per chapter (snappy, ~10 screens total) or ~180vh per chapter (more time inside each world, slower read)? I'll default to ~140vh unless you say otherwise.
