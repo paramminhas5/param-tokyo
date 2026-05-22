@@ -711,4 +711,4 @@ export function interpPath(path: Waypoint[], p: number): { x: number; y: number;
   return { x, y, action, facing };
 }
 
-export { LW, LH, GROUND_Y };
+
