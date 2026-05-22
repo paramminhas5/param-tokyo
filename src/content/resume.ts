@@ -25,6 +25,8 @@ export interface Chapter {
   hook: string;
   paragraphs: string[];
   outcomes: string[];
+  /** Skills from prior chapters that this one builds on. */
+  builtOn: SkillId[];
   skill: SkillId;
   mini: { kind: MiniGameKind; prompt: string; success: string };
   theme: { sky: string; ground: string; accent: string; silhouette: string };
