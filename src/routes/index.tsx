@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { Hud } from "@/components/Hud";
 import { ChapterPanel } from "@/components/ChapterPanel";
+import { InventoryRail } from "@/components/InventoryRail";
+import { HirePanel } from "@/components/HirePanel";
 import { HERO, CHAPTERS } from "@/content/resume";
 
 export const Route = createFileRoute("/")({
@@ -17,74 +20,91 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+function EndPanel() {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+  const [hireOpen, setHireOpen] = useState(false);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const io = new IntersectionObserver(
+      (e) => e.forEach((x) => { if (x.isIntersecting) setVisible(true); }),
+      { threshold: 0.3 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <section className="relative min-h-[90vh] flex items-center justify-center px-4 sm:px-6 py-16 bg-[color:var(--surface-1)]">
+      <div
+        ref={ref}
+        className={`relative max-w-2xl text-center transition-all duration-700 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
+      >
+        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--accent)]">★ Quest complete</div>
+        <h2 className="mt-4 text-3xl sm:text-5xl font-semibold tracking-tight text-[color:var(--fg)]">
+          Let's build the next one.
+        </h2>
+        <p className="mt-4 text-[color:var(--fg)]/75">{HERO.location}</p>
+        <div className="mt-7 flex items-center justify-center gap-2 flex-wrap">
+          <button
+            onClick={() => setHireOpen(true)}
+            className="px-5 py-2.5 rounded-md bg-[color:var(--accent)] text-[color:var(--accent-foreground)] text-sm font-medium hover:opacity-90 transition"
+          >
+            Hire me
+          </button>
+          <a href={`mailto:${HERO.email}`} className="px-5 py-2.5 rounded-md border border-[color:var(--border)] text-sm hover:border-[color:var(--accent)] hover:text-[color:var(--accent)] transition">
+            ✉ {HERO.email}
+          </a>
+          <Link to="/cv" className="px-5 py-2.5 rounded-md border border-[color:var(--border)] text-sm hover:border-[color:var(--accent)] hover:text-[color:var(--accent)] transition">
+            Full CV
+          </Link>
+        </div>
+      </div>
+      <HirePanel open={hireOpen} onClose={() => setHireOpen(false)} />
+    </section>
+  );
+}
+
 function Index() {
   return (
-    <div id="top" className="bg-[var(--pm-deep-2)] text-white">
+    <div id="top" className="bg-[color:var(--surface-1)] text-[color:var(--fg)]">
       <Hud />
+      <InventoryRail />
 
-      {/* Intro plate */}
+      {/* Intro */}
       <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 pt-16 pb-10 overflow-hidden">
-        <div className="absolute inset-0 bg-scanlines opacity-30 pointer-events-none" />
         <div className="absolute inset-0" style={{
-          background: "radial-gradient(ellipse at 50% 60%, oklch(0.30 0.18 295) 0%, var(--pm-deep-2) 70%)"
+          background: "radial-gradient(ellipse at 50% 60%, color-mix(in oklab, var(--accent) 18%, transparent) 0%, var(--surface-1) 60%)"
         }} />
         <div className="relative max-w-3xl text-center">
-          <span className="font-pixel text-[10px] sm:text-xs text-[var(--pm-gold)]">PRESS START</span>
-          <h1 className="mt-4 font-pixel text-2xl sm:text-4xl md:text-5xl text-white leading-tight">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--accent)]">Playable resume · press start</span>
+          <h1 className="mt-5 text-4xl sm:text-6xl md:text-7xl font-semibold tracking-tight text-[color:var(--fg)] leading-[1.05]">
             {HERO.name}
           </h1>
-          <p className="mt-4 text-base sm:text-lg text-[var(--pm-cyan)] font-mono">
+          <p className="mt-5 text-base sm:text-lg text-[color:var(--accent)] font-mono">
             {HERO.tagline}
           </p>
-          <p className="mt-3 text-sm sm:text-base text-white/80 max-w-xl mx-auto">
+          <p className="mt-4 text-[15px] sm:text-base text-[color:var(--fg)]/75 max-w-xl mx-auto leading-relaxed">
             {HERO.bio}
           </p>
-          <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">
-            <a href={`#${CHAPTERS[0].id}`} className="font-pixel text-[10px] sm:text-xs px-4 py-2 bg-[var(--pm-magenta)] text-white hover:bg-[var(--pm-gold)] hover:text-[var(--pm-ink)] transition-colors">
-              ▼ ENTER WORLD
+          <div className="mt-8 flex items-center justify-center gap-2 flex-wrap">
+            <a href={`#${CHAPTERS[0].id}`} className="px-5 py-2.5 rounded-md bg-[color:var(--accent)] text-[color:var(--accent-foreground)] text-sm font-medium hover:opacity-90 transition">
+              ▼ Enter world
             </a>
-            <Link to="/cv" className="font-pixel text-[10px] sm:text-xs px-4 py-2 border-2 border-[var(--pm-gold)] text-[var(--pm-gold)] hover:bg-[var(--pm-gold)] hover:text-[var(--pm-ink)] transition-colors">
+            <Link to="/cv" className="px-5 py-2.5 rounded-md border border-[color:var(--border)] text-sm hover:border-[color:var(--accent)] hover:text-[color:var(--accent)] transition">
               ⬇ CV
             </Link>
           </div>
-          <div className="mt-10 font-pixel text-[9px] sm:text-[10px] text-white/50">
-            scroll · the world unfolds · play each level
+          <div className="mt-12 font-mono text-[10px] tracking-widest text-[color:var(--muted-fg)]/80">
+            scroll · collect outcomes · play each cabinet
           </div>
         </div>
       </section>
 
-      {/* Chapter panels — each is a full-bleed playable world */}
       {CHAPTERS.map((c) => (
         <ChapterPanel key={c.id} chapter={c} />
       ))}
 
-      {/* End / contact panel */}
-      <section className="relative min-h-[80vh] flex items-center justify-center px-4 sm:px-6 py-16">
-        <div className="absolute inset-0 bg-scanlines opacity-30 pointer-events-none" />
-        <div className="relative max-w-2xl text-center">
-          <div className="font-pixel text-xs text-[var(--pm-gold)]">★ QUEST COMPLETE ★</div>
-          <h2 className="mt-4 font-pixel text-2xl sm:text-3xl text-white">
-            Let's build the next one.
-          </h2>
-          <p className="mt-4 text-white/80">
-            {HERO.location}
-          </p>
-          <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
-            <a href={`mailto:${HERO.email}`} className="font-pixel text-[10px] sm:text-xs px-4 py-2 bg-[var(--pm-cyan)] text-[var(--pm-ink)] hover:bg-white transition-colors">
-              ✉ {HERO.email}
-            </a>
-            <Link to="/cv" className="font-pixel text-[10px] sm:text-xs px-4 py-2 bg-[var(--pm-magenta)] text-white hover:bg-[var(--pm-gold)] hover:text-[var(--pm-ink)] transition-colors">
-              ⬇ FULL CV
-            </Link>
-            <a href={HERO.links.linkedin} target="_blank" rel="noreferrer" className="font-pixel text-[10px] sm:text-xs px-4 py-2 border border-white/30 text-white hover:border-[var(--pm-gold)] hover:text-[var(--pm-gold)] transition-colors">
-              LinkedIn
-            </a>
-            <a href={HERO.links.twitter} target="_blank" rel="noreferrer" className="font-pixel text-[10px] sm:text-xs px-4 py-2 border border-white/30 text-white hover:border-[var(--pm-gold)] hover:text-[var(--pm-gold)] transition-colors">
-              X / Twitter
-            </a>
-          </div>
-        </div>
-      </section>
+      <EndPanel />
     </div>
   );
 }
