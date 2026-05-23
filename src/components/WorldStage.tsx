@@ -1,88 +1,66 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { Chapter } from "@/content/resume";
+import { SKILLS } from "@/content/resume";
 import { WORLDS } from "@/game/journey";
 import { addSkill, useSkills } from "@/game/state";
 import { sfx } from "@/game/audio";
-import { CliffNoteCard } from "./CliffNoteCard";
-import { WorldHero } from "./WorldHero";
-import { NPC } from "./NPC";
-import { Prop } from "./Prop";
-import { SkillPickup } from "./SkillPickup";
+import { registerWorldEl, useProgress } from "@/game/progress";
+import { SkillIcon } from "./SkillIcon";
 
 interface Props {
   chapter: Chapter;
-  isFirst?: boolean;
 }
 
 /**
- * One world section. Scroll progress (0..1) drives:
- *  - the hero's horizontal position (left → right)
- *  - skill pickup collection (each pickup has an x; once hero passes x, collect)
- *  - cliff-note card visibility (in/out)
+ * One world section. Pure sprite art — background image + foreground PNG overlay +
+ * skill pickups laid out along the path. The hero is rendered globally (GlobalHero),
+ * so this component only paints the world itself.
  */
-export function WorldStage({ chapter, isFirst }: Props) {
+export function WorldStage({ chapter }: Props) {
   const world = WORLDS[chapter.id] ?? WORLDS.origin;
   const ref = useRef<HTMLElement | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [cardVisible, setCardVisible] = useState(false);
+  const { worldId, worldProgress } = useProgress();
+  const isActive = worldId === chapter.id;
   const collectedRef = useRef<Set<string>>(new Set());
-  const skills = useSkills();
+  const earned = useSkills();
 
   useEffect(() => {
-    let raf = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const el = ref.current;
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        const vh = window.innerHeight;
-        const total = rect.height + vh;
-        const traveled = vh - rect.top;
-        const p = Math.max(0, Math.min(1, traveled / total));
-        setProgress(p);
-        setCardVisible(rect.top < vh * 0.7 && rect.bottom > vh * 0.25);
+    registerWorldEl(chapter.id, ref.current);
+    return () => registerWorldEl(chapter.id, null);
+  }, [chapter.id]);
 
-        // Hero-x equivalent in 0..100
-        const heroX = 8 + p * 84;
-
-        // Collect pickups the hero has walked past
-        const step = 100 / (chapter.pickups.length + 1);
-        chapter.pickups.forEach((pid, i) => {
-          const px = step * (i + 1);
-          if (heroX >= px - 4 && !collectedRef.current.has(pid)) {
-            collectedRef.current.add(pid);
-            addSkill(pid);
-            sfx.pickup();
-          }
-        });
-      });
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(raf); };
-  }, [chapter.pickups]);
-
-  // Mark a hero-x window for entering (top 8%) and exiting (bottom 8%)
-  const entering = progress < 0.08;
-  const exiting = progress > 0.92;
+  // Collect pickups the hero has visually passed.
+  useEffect(() => {
+    if (!isActive) return;
+    const heroX = 12 + worldProgress * 76;
+    const step = 100 / (chapter.pickups.length + 1);
+    chapter.pickups.forEach((pid, i) => {
+      const px = step * (i + 1);
+      if (heroX >= px - 2 && !collectedRef.current.has(pid)) {
+        collectedRef.current.add(pid);
+        addSkill(pid);
+        sfx.pickup();
+      }
+    });
+  }, [isActive, worldProgress, chapter.pickups]);
 
   return (
     <section
       ref={ref}
       id={chapter.id}
-      className="relative w-full overflow-hidden"
       style={{
+        position: "relative",
+        width: "100%",
         minHeight: "150vh",
+        overflow: "hidden",
         background: "#0a0a14",
-        ["--world-accent" as string]: world.accent,
       }}
     >
-      {/* Background image */}
+      {/* Background image (deep layer) */}
       <div
         aria-hidden
-        className="absolute inset-0"
         style={{
+          position: "absolute", inset: 0,
           backgroundImage: `url(${world.bg})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -92,80 +70,97 @@ export function WorldStage({ chapter, isFirst }: Props) {
       {/* Vignette */}
       <div
         aria-hidden
-        className="absolute inset-0"
         style={{
-          background: `linear-gradient(180deg, rgba(10,10,20,0.25) 0%, rgba(10,10,20,0) 25%, rgba(10,10,20,0.55) 100%)`,
+          position: "absolute", inset: 0,
+          background: "linear-gradient(180deg, rgba(10,10,20,0.35) 0%, rgba(10,10,20,0) 22%, rgba(10,10,20,0.6) 100%)",
         }}
       />
 
-      {/* Ground plane where the action happens */}
-      <div className="absolute inset-x-0 bottom-0 h-[55%] pointer-events-none">
-        {/* Props */}
-        {chapter.props.map((p, i) => (
-          <div
-            key={`p${i}`}
-            className="absolute"
-            style={{
-              left: `${p.x}%`,
-              bottom: "16%",
-              transform: `translateX(-50%) scale(${p.scale ?? 1})`,
-            }}
-          >
-            <Prop kind={p.kind} accent={world.accent} ink={chapter.theme.silhouette} size={100} />
-          </div>
-        ))}
-
-        {/* NPCs */}
-        {chapter.npcs.map((n, i) => (
-          <div
-            key={`n${i}`}
-            className="absolute"
-            style={{
-              left: `${n.x}%`,
-              bottom: "18%",
-              transform: "translateX(-50%)",
-            }}
-          >
-            <NPC kind={n.kind} label={n.label} accent={world.accent} ink={chapter.theme.silhouette} />
-          </div>
-        ))}
-
-        {/* Skill pickups along the path */}
-        {chapter.pickups.map((pid, i) => {
-          const step = 100 / (chapter.pickups.length + 1);
-          const px = step * (i + 1);
-          return (
-            <SkillPickup
-              key={pid}
-              id={pid}
-              x={px}
-              accent={world.accent}
-              collected={skills.includes(pid)}
-            />
-          );
-        })}
-
-        {/* Hero */}
-        <WorldHero progress={progress} entering={entering} exiting={exiting} accent={world.accent} />
-      </div>
-
-      {/* Cliff-note card (corner, never blocking) */}
-      <CliffNoteCard chapter={chapter} accent={world.accent} visible={cardVisible} />
-
-      {/* World progress bar (slim, bottom) */}
-      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-30 w-[min(420px,80vw)] h-[3px] bg-white/10 overflow-hidden">
-        <div
-          className="h-full transition-all duration-150"
-          style={{ width: `${progress * 100}%`, background: world.accent }}
+      {/* Foreground prop layer (parallax based on world progress) */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: 0, right: 0, bottom: 0,
+          height: "75%",
+          transform: `translateX(${(isActive ? worldProgress : 0) * -8}%)`,
+          transition: "transform 200ms linear",
+        }}
+      >
+        <img
+          src={world.fg}
+          alt=""
+          loading="lazy"
+          style={{
+            position: "absolute",
+            left: "-4%",
+            bottom: "12vh",
+            width: "108%",
+            height: "auto",
+            maxHeight: "70%",
+            objectFit: "contain",
+            objectPosition: "bottom",
+            imageRendering: "auto",
+            filter: "drop-shadow(0 14px 24px rgba(0,0,0,0.45))",
+          }}
         />
       </div>
 
-      {/* First-world scroll hint */}
-      {isFirst && progress < 0.15 && (
-        <div className="absolute bottom-24 left-0 right-0 z-30 text-center font-mono text-[10px] tracking-[0.22em] uppercase animate-pulse" style={{ color: "#f0ece4", opacity: 0.7 }}>
-          ↓ scroll to walk
-        </div>
-      )}
+      {/* Skill pickups along the path */}
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+        {chapter.pickups.map((pid, i) => {
+          const step = 100 / (chapter.pickups.length + 1);
+          const px = step * (i + 1);
+          const collected = earned.includes(pid);
+          return (
+            <div
+              key={pid}
+              style={{
+                position: "absolute",
+                left: `${px}%`,
+                bottom: "calc(16vh + 130px)",
+                transform: "translateX(-50%)",
+                transition: "opacity 350ms ease, transform 450ms ease",
+                opacity: collected ? 0 : 1,
+              }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  padding: 12,
+                  borderRadius: 999,
+                  background: `radial-gradient(circle at 35% 30%, ${world.accent}cc 0%, ${world.accent}66 45%, transparent 75%)`,
+                  boxShadow: `0 0 32px ${world.accent}88`,
+                  animation: "pm-float 2.6s ease-in-out infinite",
+                }}
+              >
+                <SkillIcon id={pid} size={40} earned />
+              </div>
+              <div
+                style={{
+                  marginTop: 6,
+                  textAlign: "center",
+                  fontFamily: "monospace",
+                  fontSize: 9,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: world.accent,
+                  textShadow: "0 2px 6px rgba(0,0,0,0.85)",
+                }}
+              >
+                {SKILLS[pid].name}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <style>{`
+        @keyframes pm-float {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-10px); }
+        }
+      `}</style>
     </section>
   );
 }

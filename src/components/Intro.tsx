@@ -1,107 +1,110 @@
 import { Link } from "@tanstack/react-router";
 import { HERO, CHAPTERS } from "@/content/resume";
-import heroSheet from "@/assets/game/hero/hero-sheet.png";
-import { HERO_POSES, HERO_SHEET_COLS } from "@/game/journey";
+import paperBg from "@/assets/game/ui/paper-bg.jpg";
 
+/**
+ * Intro screen. No character — the hero only appears once the journey starts.
+ * Pure sprite-style chrome over a riso paper backdrop.
+ */
 export function Intro() {
-  const cellH = 180;
-  const cellW = cellH * (320 / 512);
-  const sheetW = cellW * HERO_SHEET_COLS;
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-16 pb-10 overflow-hidden" style={{ background: "#0a0a14" }}>
-      {/* Riso grain backdrop */}
+    <section
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "5rem 1.25rem 3rem",
+        overflow: "hidden",
+        backgroundImage: `url(${paperBg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {/* Subtle dark vignette so text reads */}
       <div
         aria-hidden
-        className="absolute inset-0 opacity-50"
         style={{
-          background:
-            "radial-gradient(ellipse at 50% 70%, rgba(255,107,91,0.30) 0%, transparent 55%), radial-gradient(ellipse at 80% 20%, rgba(251,191,36,0.18) 0%, transparent 50%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 mix-blend-overlay opacity-[0.07]"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(0deg, rgba(255,255,255,0.6) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(255,255,255,0.6) 0 1px, transparent 1px 3px)",
+          position: "absolute", inset: 0,
+          background: "radial-gradient(ellipse at center, rgba(10,10,20,0.25) 0%, rgba(10,10,20,0.7) 100%)",
         }}
       />
 
-      <div className="relative max-w-3xl text-center">
-        <span className="font-mono text-[10px] uppercase tracking-[0.32em]" style={{ color: "#fbbf24" }}>
-          ◤ Playable résumé · 9 worlds ◥
+      <div style={{ position: "relative", maxWidth: 720, textAlign: "center" }}>
+        <span style={{ fontFamily: "monospace", fontSize: 10, letterSpacing: "0.32em", textTransform: "uppercase", color: "#fbbf24" }}>
+          ◤ A Playable Résumé · 9 Worlds ◥
         </span>
         <h1
-          className="mt-5 text-5xl sm:text-7xl md:text-8xl font-semibold tracking-tight text-[#f0ece4] leading-[0.95]"
-          style={{ fontFamily: "var(--font-display)" }}
+          style={{
+            marginTop: 18, fontSize: "clamp(2.5rem, 8vw, 5.5rem)", lineHeight: 0.95,
+            color: "#f0ece4", fontWeight: 600, letterSpacing: "-0.02em",
+            fontFamily: "var(--font-display, inherit)",
+          }}
         >
           {HERO.name}
         </h1>
-        <p className="mt-4 text-base sm:text-lg font-mono uppercase tracking-[0.18em]" style={{ color: "#ff6b5b" }}>
+        <p style={{ marginTop: 16, fontFamily: "monospace", fontSize: 14, letterSpacing: "0.18em", textTransform: "uppercase", color: "#ff6b5b" }}>
           {HERO.tagline}
         </p>
-        <p className="mt-4 text-[15px] sm:text-base text-[#f0ece4]/75 max-w-xl mx-auto leading-relaxed">
+        <p style={{ marginTop: 14, color: "rgba(240,236,228,0.78)", maxWidth: 560, margin: "14px auto 0", lineHeight: 1.55, fontSize: 15 }}>
           {HERO.bio}
         </p>
 
-        {/* Hero standing next to PRESS DOWN signpost */}
-        <div className="mt-10 flex items-end justify-center gap-6">
-          <div
-            aria-hidden
-            style={{
-              width: cellW,
-              height: cellH,
-              backgroundImage: `url(${heroSheet})`,
-              backgroundSize: `${sheetW}px ${cellH}px`,
-              backgroundPosition: `-${HERO_POSES.idle * cellW}px 0px`,
-              backgroundRepeat: "no-repeat",
-              imageRendering: "pixelated",
-              filter: "drop-shadow(0 14px 18px rgba(0,0,0,0.55))",
-            }}
-          />
+        {/* Press to play sign */}
+        <div style={{ marginTop: 36, display: "flex", justifyContent: "center" }}>
           <a
             href={`#${CHAPTERS[0].id}`}
-            className="signpost relative px-5 py-4 font-mono text-xs uppercase tracking-[0.2em]"
             style={{
-              background: "rgba(15,12,20,0.9)",
+              position: "relative",
+              padding: "16px 28px",
+              fontFamily: "monospace",
+              fontSize: 12,
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              background: "rgba(10,10,20,0.9)",
               color: "#fbbf24",
-              border: "1px solid #fbbf24",
-              boxShadow: "0 0 0 3px rgba(15,12,20,0.9), 0 0 0 4px #fbbf2444, 0 14px 28px rgba(0,0,0,0.6)",
+              border: "2px solid #fbbf24",
+              boxShadow: "0 0 0 4px rgba(10,10,20,0.9), 0 0 0 5px rgba(251,191,36,0.4), 0 18px 36px rgba(0,0,0,0.7)",
+              textDecoration: "none",
             }}
           >
             ▼ Press ↓ to play
           </a>
         </div>
 
-        <div className="mt-10 grid grid-cols-3 sm:grid-cols-6 gap-2 max-w-2xl mx-auto">
-          {HERO.stats.map((s) => (
+        <div style={{ marginTop: 36, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, maxWidth: 560, margin: "36px auto 0" }}>
+          {HERO.stats.slice(0, 6).map((s) => (
             <div
               key={s.label}
-              className="px-2 py-2"
               style={{
-                background: "rgba(15,12,20,0.6)",
-                border: "1px solid rgba(240,236,228,0.15)",
+                padding: "10px 8px",
+                background: "rgba(10,10,20,0.65)",
+                border: "1px solid rgba(240,236,228,0.18)",
               }}
             >
-              <div className="text-sm font-semibold text-[#f0ece4]">{s.value}</div>
-              <div className="font-mono text-[8px] uppercase tracking-[0.12em] text-[#f0ece4]/55 mt-0.5 leading-tight">{s.label}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#f0ece4" }}>{s.value}</div>
+              <div style={{ marginTop: 2, fontFamily: "monospace", fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(240,236,228,0.55)", lineHeight: 1.2 }}>
+                {s.label}
+              </div>
             </div>
           ))}
         </div>
 
-        <div className="mt-8 flex items-center justify-center gap-3 flex-wrap font-mono text-[10px] uppercase tracking-[0.2em]">
-          <Link to="/cv" className="px-3 py-1.5 border border-[#f0ece4]/30 text-[#f0ece4]/80 hover:border-[#fbbf24] hover:text-[#fbbf24] transition">⬇ Full CV</Link>
-          <a href={`mailto:${HERO.email}`} className="px-3 py-1.5 border border-[#f0ece4]/30 text-[#f0ece4]/80 hover:border-[#fbbf24] hover:text-[#fbbf24] transition">✉ Email</a>
-          <a href={HERO.links.linkedin} target="_blank" rel="noreferrer" className="px-3 py-1.5 border border-[#f0ece4]/30 text-[#f0ece4]/80 hover:border-[#fbbf24] hover:text-[#fbbf24] transition">LinkedIn</a>
+        <div style={{ marginTop: 28, display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap", fontFamily: "monospace", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase" }}>
+          <Link to="/cv" style={linkStyle}>⬇ Full CV</Link>
+          <a href={`mailto:${HERO.email}`} style={linkStyle}>✉ Email</a>
+          <a href={HERO.links.linkedin} target="_blank" rel="noreferrer" style={linkStyle}>LinkedIn</a>
         </div>
       </div>
-      <style>{`
-        .signpost::before, .signpost::after {
-          content: ""; position: absolute; background: #fbbf24; width: 6px; height: 6px;
-        }
-        .signpost::before { top: -3px; left: -3px; box-shadow: calc(100% + 3px) 0 0 #fbbf24; }
-        .signpost::after  { bottom: -3px; left: -3px; box-shadow: calc(100% + 3px) 0 0 #fbbf24; }
-      `}</style>
     </section>
   );
 }
+
+const linkStyle: React.CSSProperties = {
+  padding: "6px 12px",
+  border: "1px solid rgba(240,236,228,0.3)",
+  color: "rgba(240,236,228,0.85)",
+  textDecoration: "none",
+};
