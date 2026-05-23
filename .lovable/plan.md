@@ -1,92 +1,88 @@
 
-# Continuous character + richer worlds + modern polish
+# Build plan — Generate Risograph neo-tokyo asset pack + wire the journey
 
-Big lift across world art, character continuity, content density, modals, HUD, and a theme switch.
+Approve this and I'll start generating. All assets saved to `src/assets/game/` so you can swap any file later without touching code.
 
-## 1. Character travels continuously between worlds
+## Art bible (locked across every asset)
 
-Today: each panel has its own canvas; character disappears at panel end and respawns. Change to one shared character that climbs/descends between panels so it reads as one journey.
+- Risograph neo-tokyo, AAA indie game quality (think *Sable* + *Katana Zero* + Olly Moss posters).
+- Paper base `#f0ece4`, ink `#1a1a2e`, one accent per world. Visible riso grain, soft misregistration, halftone shadows. No gradients, no glow, no AI smoothness.
+- Character is the same person across every frame and every world — same proportions, same silhouette, same palette.
+- Side-scroller perspective, parallax-ready (sky / mid / ground layers separable).
 
-- **Inter-panel transitions**: between every chapter add a thin "bridge" strip (~30vh) drawn as part of the next panel's top: a rope, ladder, vine, scaffold, or chute that visually connects the previous ground line to the next sky.
-- Each `Scene` gets `entry` and `exit` waypoints + an `entryProp` (rope / ladder / chute / pipe / cable car) drawn at the top of the panel.
-- The character's path now runs: `entry (top, climbing down) → through the scene → exit (bottom-right, dangling off the edge)`. The previous panel's exit prop and the next panel's entry prop are the *same prop kind* and aligned at the same x so the eye reads it as continuous.
-- The character is always on-canvas in whichever panel is currently in viewport, no fade.
+## Asset list (all generated in build mode)
 
-## 2. Worlds are richer and the "play" affordance is unmistakable
+### Folder layout
+```
+src/assets/game/
+  hero/            character sprite frames
+  worlds/          9 backgrounds (parallax layers per world)
+  props/           per-world interactive props
+  transitions/    inter-world climb/ride sprites
+  skills/          35 skill icons
+  ui/              title-card, speech-bubble, dialog-box, avatar
+```
 
-- Expand each scene from ~8 props to ~16-20 with 3 parallax layers (far / mid / near). Add per-chapter dressing: rooftop bedroom (CRT + bed + cassette wall + posters + cat); warehouse (shelves stacked deep + forklift silhouette + barcode wall); rental street (autorickshaw + 3 houses + power lines + dog); AI lab (server wall + terminal cluster + chat bubbles + AC vents); vault tower (5 stacked vaults + pulley + ticker board + papers); sneaker arena (crowd rows + stage truss + DJ booth + LED wall); agent farm (rack rows + holo-globe + cable trays); stage (drum kit + DJ deck + cats dancing + EQ wall); workshop (modular blocks + crane + glowing core machine).
-- Replace the small bottom-right "▶ PLAY" button with a clear in-world **arcade cabinet** prop at `playX`. When the character reaches it: cabinet lights flash, a big floating "PRESS ▶" tag pops above it, and a parallel keyboard `Space` shortcut works. Cabinet is themed per chapter (e.g., sneaker drop terminal, vault console, mixing desk, AI terminal).
+### 1. Hero (1 cohesive character)
+Single character sheet generated first, then every other pose edited *from* that sheet so the person stays identical.
+- `hero-idle.png`, `hero-walk.png` (6-frame strip), `hero-climb.png` (4-frame strip), `hero-sit.png`, `hero-point.png`, `hero-jump.png`
 
-## 3. Floating tags become collectible pickups that pop during play
+### 2. Worlds — 9 backgrounds, parallax-separated
+Each world = 3 PNGs (`-sky.png`, `-mid.png`, `-ground.png`), 1920×1400 each, transparent where needed.
 
-- Today: outcome strings are static chips covering the canvas. Change to **floating pickup tokens** scattered along the character's path (one per outcome, ~5-6 per chapter). Each token is a small pixel chip with the outcome label as a tooltip.
-- As the character walks past, tokens auto-collect with a `+1` pop animation and slide into a thin **inventory rail** docked at the bottom of the viewport (always visible across panels).
-- Replace the current `<div>` outcome chips on top of the canvas with these in-world tokens — nothing covers the artwork anymore.
+| World | Accent | Scene |
+|---|---|---|
+| Origin (hero-tier polish) | coral | bedroom at night, CRT, cassette wall, skyline window |
+| GetRightPrice | mustard | dorm desk, early web catalog screens |
+| Hab Housing | sage | Bengaluru street, autorickshaw, "TO LET" boards, power lines |
+| Early AI Era (HERO) | ocean | AI lab, server wall, chat-bubble swarm, AC vents |
+| Investopad | plum | co-working tower, founder desks, ticker board |
+| SoleSearch (HERO) | coral | sneaker arena, crowd, stage truss, LED wall, boxes deep |
+| Fere.ai | electric blue | agent farm, holo-globe, cable trays, candlestick wall |
+| Cats Can Dance (HERO) | magenta | studio + stage, DJ booth, dancing cats, EQ wall |
+| Iterate (HERO) | amber | modular workshop, glowing core machine, crane |
 
-## 4. CV-style "cliff notes" intro card per world
+### 3. Props (per world, transparent PNGs)
+~6 props per world (CRT, cassette deck, cat, sneaker boxes, DJ deck, dancing-cat 4-frame, holo-globe, terminal, ticker, rickshaw, dog, modular blocks, core machine, etc. — full list in code).
 
-When a panel enters viewport, a clean modern **chapter card** slides in from the side (motion-driven) showing:
-- Year · Org · Role (title)
-- 1-line hook
-- "Built on:" — chips of skills earned in *previous* panels that apply here (computed from a new `chapter.builtOn: SkillId[]` field added to `resume.ts`)
-- "New skill:" — the skill this panel awards
-- 2 short bullets (trimmed from current paragraphs)
+### 4. Transitions (between worlds)
+9 props, 64×280: rope, fire-escape, cable, vault-chain, stage-truss, cable-tray, conveyor, tour-bus-stairs, ladder.
 
-The card slides out as the panel exits. It sits beside the canvas (right rail on desktop, top sheet on mobile <768px) and never overlaps the character. Long-form paragraphs stay only on `/cv`.
+### 5. Skill icons (35)
+One per skill from your dump, grouped by family (Strategy, Design, Engineering, Music, Growth). 32×32 transparent.
 
-## 5. Modals appear as you scroll, not just on click
+### 6. UI frames
+- `title-card-frame.png` (9-slice, recolored per world via CSS)
+- `speech-bubble.png` (9-slice)
+- `dialog-box.png` (9-slice)
+- `avatar-riso.png` (your photo, riso-treated — I'll use the one in current `HirePanel` if present, otherwise placeholder)
 
-- The skill-earned modal, the cliff-notes card, and the end-of-journey "let's work together" card all surface automatically via `IntersectionObserver` triggers at scroll thresholds — using motion-react slide/fade.
-- Mini-game modal still requires action (click cabinet / press Space) — auto-popping a game would be annoying.
-- A "skills earned" pop appears briefly each time a new skill is added.
+## Generation method
 
-## 6. HIRE tab → full contact panel
+- Use `imagegen` `premium` tier for all hero-tier worlds + character + UI frames (best text + detail).
+- Use `standard` for vignette worlds, props, skill icons (faster, still high quality).
+- Character consistency: generate the master sheet first, then `edit_image` from it for every other pose and for the avatar.
+- World consistency: generate one "style master" tile first; every subsequent world references it in the prompt so palette/grain/line weight match.
+- All sprites: `transparent_background: true` where appropriate, on a clean white background prompt.
 
-Today HIRE is a `mailto:`. Change to a HUD button that opens a slide-out **HIRE panel** with:
-- Photo / avatar block, name, location, availability line
-- Email (copy button), LinkedIn, X, personal site
-- "Currently building" — Iterate + Cats Can Dance with one-liners
-- Quick stats row (from `HERO.stats`)
-- A short pitch paragraph
-- Direct `mailto:` CTA + "Download CV" link
+## Code wiring (after assets land)
 
-Same drawer is reachable from a sticky bottom-right "HIRE" pill on mobile.
+- Delete: `CliffNotesCard.tsx`, NES theme tokens, `draw.ts` character/cabinet code, theme switch in `Hud.tsx`.
+- New components: `Journey.tsx` (single continuous character driven by scrollY), `WorldStage.tsx` (3-layer parallax bg + props), `TitleCard.tsx`, `SpeechBubble.tsx`, `DialogBox.tsx`, `SkillBelt.tsx`, `Transition.tsx`.
+- Rewrite: `scenes.ts` (sprite refs, path, props, transition, 2 bullets), `resume.ts` (skill catalog + per-chapter awards), `styles.css` (riso tokens), `routes/index.tsx`, `Hud.tsx` (slim).
+- Keep: `MiniGame` shell (riso re-skin), `pickups.ts` (repurposed as skill collection), `state.ts`, `audio.ts`.
 
-## 7. Modern, clean, professional look + theme switch
+## Order of operations in build mode
 
-The current palette (deep purple + magenta + gold + cyan, NES-style) is what the user dislikes. Add a **theme switch** in the HUD that toggles between two cohesive themes; persisted to `localStorage`.
+1. Generate hero sprite master + all pose variants (~7 files).
+2. Generate style-master tile, then 9 worlds × 3 layers (~27 files).
+3. Generate props (~50 files), transitions (9), skill icons (35), UI frames (4).
+4. Wire `Journey` + `WorldStage` with the new sprites.
+5. Replace `index.tsx` to use the single continuous journey.
+6. QA: scroll the full page, verify character continuity, verify every world reads cleanly, verify skill collection.
 
-- **Theme A — "Console" (default new)**: charcoal + ivory + a single warm accent (terracotta/amber). Modern, editorial, calm. Pixel art still works but with muted palette.
-- **Theme B — "Midnight"**: near-black + cool slate + electric mint accent. Sharper, tech-forward.
+## What you can swap later
 
-Both themes share: single accent, generous whitespace in the HUD/cards, modern sans (Inter for body, JetBrains Mono for labels), pixel font only for in-world signs and HUD micro-labels — not for body text. Pixel-art canvases are re-tinted per theme via CSS vars (`--scene-sky`, `--scene-ground`, `--scene-accent`, `--scene-silhouette`) that override per-scene defaults.
+Every asset lives at a stable filename in `src/assets/game/`. Drop a replacement PNG with the same name → it just works. I'll print the full filename manifest at the end so you have a checklist.
 
-Cards/modals/HUD get: subtle 1px borders, soft elevation (no neon shadows), 8/16/24px rhythm, motion-react for entry/exit, no more `box-shadow: 4px 4px 0` brutalist blocks.
-
-## 8. Files to change
-
-- `src/content/resume.ts` — add `builtOn: SkillId[]`, `outcomes` stays (used as pickup labels), trim paragraphs to 2× <180 chars, add `entry`/`exit` hints.
-- `src/game/scenes.ts` — add `entryProp`, `exitProp`, `entryX`, `exitX`; expand each `props` array (~16-20 each); add `pickups: { x, y, label, skillRef? }[]`; convert `playX` into an in-world `arcadeCabinet` prop.
-- `src/game/draw.ts` — new prop renderers (`arcadeCabinet`, `rope`, `chute`, `cableCar`, `forklift`, `dog`, `djDeck`, `drumKit`, `holoGlobe`, `cat-dancing`, etc.), 3-layer parallax helper, theme-aware palette reading from CSS vars.
-- `src/components/ChapterPanel.tsx` — share character across panels via a new top-level `GameWorld` provider (see below); render cliff-notes card with motion-react via `IntersectionObserver`; remove cover-up chips; render in-canvas pickups; show in-canvas cabinet + PRESS prompt.
-- New `src/components/GameWorld.tsx` — wraps the page, owns the character's continuous position (scrollY-driven across all panels), draws the character onto whichever panel canvas is currently visible, runs the inventory rail at the bottom.
-- New `src/components/CliffNotesCard.tsx` — slide-in chapter card.
-- New `src/components/HirePanel.tsx` — full contact drawer.
-- New `src/components/InventoryRail.tsx` — sticky bottom rail of collected tokens.
-- New `src/components/ThemeSwitch.tsx` + `src/game/theme.ts` — two themes, localStorage, applies a `data-theme` attribute on `<html>`.
-- `src/components/Hud.tsx` — wire theme switch + HIRE drawer; remove the brutalist styling.
-- `src/styles.css` — add `[data-theme="console"]` and `[data-theme="midnight"]` palettes with shared modern tokens (spacing, borders, shadows); add `--scene-*` CSS vars per theme that the canvas reads.
-- `src/routes/index.tsx` — render `<GameWorld>` wrapper around `CHAPTERS.map(...)`, plus `<InventoryRail>`, plus auto-surfacing end card.
-
-Add `motion` (`framer-motion` replacement) via `bun add motion`.
-
-## Out of scope
-
-- Mini-game logic changes (same 3 kinds, just launched from the cabinet prop).
-- `/cv` route changes.
-- Audio bed beyond existing sfx.
-
-## Open questions
-
-1. **Two themes is the ask — should the *default* be the new "Console" (charcoal + amber) or "Midnight" (near-black + mint)?** I'll default to Console unless you say otherwise.
-2. **For the inter-panel bridge, is one shared metaphor OK (e.g., always a rope) or per-chapter (rope → cargo lift → ladder → fire-escape → vault chain → stage truss → cable → tour bus stairs → conveyor)?** Per-chapter is richer; defaulting to that.
+Approve to start generating.
