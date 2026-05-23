@@ -6,6 +6,7 @@ import { Intro } from "@/components/Intro";
 import { Outro } from "@/components/Outro";
 import { GlobalHero } from "@/components/GlobalHero";
 import { WorldCard } from "@/components/WorldCard";
+import { WorldTransition } from "@/components/WorldTransition";
 import { HERO, CHAPTERS } from "@/content/resume";
 
 export const Route = createFileRoute("/")({
@@ -24,9 +25,10 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <div id="top" style={{ background: "#0a0a14", color: "#f0ece4" }}>
+    <div id="top" style={{ background: "#050310", color: "#f0ece4" }}>
       <Hud />
       <GlobalHero />
+      <WorldTransition />
       <WorldCard />
       <SkillBelt />
       <Intro />

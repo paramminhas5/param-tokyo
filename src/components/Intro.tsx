@@ -1,12 +1,28 @@
-import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { HERO, CHAPTERS } from "@/content/resume";
+import titleCard from "@/assets/game/ui/title-card.png";
 import paperBg from "@/assets/game/ui/paper-bg.jpg";
 
 /**
- * Intro screen. No character — the hero only appears once the journey starts.
- * Pure sprite-style chrome over a riso paper backdrop.
+ * Cinematic title screen.
+ * Title card fades in, scanlines overlay, "PRESS ↓" blinks, stats scroll in.
  */
 export function Intro() {
+  const [phase, setPhase] = useState<"black" | "card" | "content">("black");
+  const [blink, setBlink] = useState(true);
+
+  useEffect(() => {
+    // Sequence: black → card fade (600ms) → content (1200ms)
+    const t1 = setTimeout(() => setPhase("card"), 400);
+    const t2 = setTimeout(() => setPhase("content"), 1200);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setBlink((b) => !b), 620);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <section
       style={{
@@ -23,88 +39,183 @@ export function Intro() {
         backgroundPosition: "center",
       }}
     >
-      {/* Subtle dark vignette so text reads */}
+      {/* Dark base overlay */}
       <div
         aria-hidden
         style={{
           position: "absolute", inset: 0,
-          background: "radial-gradient(ellipse at center, rgba(10,10,20,0.25) 0%, rgba(10,10,20,0.7) 100%)",
+          background: "radial-gradient(ellipse at 50% 40%, rgba(10,10,20,0.45) 0%, rgba(10,10,20,0.85) 100%)",
         }}
       />
 
-      <div style={{ position: "relative", maxWidth: 720, textAlign: "center" }}>
-        <span style={{ fontFamily: "monospace", fontSize: 10, letterSpacing: "0.32em", textTransform: "uppercase", color: "#fbbf24" }}>
-          ◤ A Playable Résumé · 9 Worlds ◥
-        </span>
-        <h1
+      {/* Scanlines */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute", inset: 0,
+          backgroundImage: "repeating-linear-gradient(0deg, rgba(0,0,0,0.08) 0px, rgba(0,0,0,0.08) 1px, transparent 1px, transparent 3px)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* CRT vignette */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute", inset: 0,
+          background: "radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,0.7) 100%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Title card */}
+      <div
+        style={{
+          position: "relative",
+          opacity: phase === "black" ? 0 : 1,
+          transform: phase === "black" ? "translateY(12px)" : "translateY(0)",
+          transition: "opacity 700ms ease, transform 700ms ease",
+          textAlign: "center",
+          maxWidth: 680,
+          width: "100%",
+        }}
+      >
+        {/* Title card image */}
+        <div style={{ marginBottom: 20, position: "relative", display: "inline-block" }}>
+          <img
+            src={titleCard}
+            alt="Param Tokyo"
+            style={{
+              maxWidth: "min(420px, 90vw)",
+              height: "auto",
+              display: "block",
+              margin: "0 auto",
+              imageRendering: "auto",
+              filter: "drop-shadow(0 12px 32px rgba(251,191,36,0.3)) drop-shadow(0 0 60px rgba(0,0,0,0.8))",
+            }}
+          />
+        </div>
+
+        {/* Subtitle */}
+        <div
           style={{
-            marginTop: 18, fontSize: "clamp(2.5rem, 8vw, 5.5rem)", lineHeight: 0.95,
-            color: "#f0ece4", fontWeight: 600, letterSpacing: "-0.02em",
-            fontFamily: "var(--font-display, inherit)",
+            opacity: phase === "content" ? 1 : 0,
+            transform: phase === "content" ? "translateY(0)" : "translateY(8px)",
+            transition: "opacity 600ms 200ms ease, transform 600ms 200ms ease",
           }}
         >
-          {HERO.name}
-        </h1>
-        <p style={{ marginTop: 16, fontFamily: "monospace", fontSize: 14, letterSpacing: "0.18em", textTransform: "uppercase", color: "#ff6b5b" }}>
-          {HERO.tagline}
-        </p>
-        <p style={{ marginTop: 14, color: "rgba(240,236,228,0.78)", maxWidth: 560, margin: "14px auto 0", lineHeight: 1.55, fontSize: 15 }}>
-          {HERO.bio}
-        </p>
-
-        {/* Press to play sign */}
-        <div style={{ marginTop: 36, display: "flex", justifyContent: "center" }}>
-          <a
-            href={`#${CHAPTERS[0].id}`}
+          <p
             style={{
-              position: "relative",
-              padding: "16px 28px",
-              fontFamily: "monospace",
-              fontSize: 12,
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              background: "rgba(10,10,20,0.9)",
-              color: "#fbbf24",
-              border: "2px solid #fbbf24",
-              boxShadow: "0 0 0 4px rgba(10,10,20,0.9), 0 0 0 5px rgba(251,191,36,0.4), 0 18px 36px rgba(0,0,0,0.7)",
-              textDecoration: "none",
+              fontFamily: "monospace", fontSize: 11,
+              letterSpacing: "0.32em", textTransform: "uppercase",
+              color: "#fbbf24", marginBottom: 8,
             }}
           >
-            ▼ Press ↓ to play
-          </a>
-        </div>
+            ◤ A Playable Résumé · {CHAPTERS.length} Worlds ◥
+          </p>
 
-        <div style={{ marginTop: 36, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, maxWidth: 560, margin: "36px auto 0" }}>
-          {HERO.stats.slice(0, 6).map((s) => (
-            <div
-              key={s.label}
+          <h1
+            style={{
+              fontSize: "clamp(2rem, 7vw, 4.5rem)",
+              lineHeight: 0.95,
+              color: "#f0ece4",
+              fontWeight: 700,
+              letterSpacing: "-0.03em",
+              fontFamily: "var(--font-display, inherit)",
+              marginBottom: 12,
+            }}
+          >
+            {HERO.name}
+          </h1>
+
+          <p
+            style={{
+              fontFamily: "monospace", fontSize: 12,
+              letterSpacing: "0.18em", textTransform: "uppercase",
+              color: "#ff6b5b", marginBottom: 10,
+            }}
+          >
+            {HERO.tagline}
+          </p>
+
+          <p
+            style={{
+              color: "rgba(240,236,228,0.75)",
+              maxWidth: 500, margin: "0 auto 28px",
+              lineHeight: 1.6, fontSize: 14,
+            }}
+          >
+            {HERO.bio}
+          </p>
+
+          {/* Press to play */}
+          <div style={{ marginBottom: 32 }}>
+            <a
+              href={`#${CHAPTERS[0].id}`}
               style={{
-                padding: "10px 8px",
-                background: "rgba(10,10,20,0.65)",
-                border: "1px solid rgba(240,236,228,0.18)",
+                display: "inline-block",
+                padding: "14px 28px",
+                fontFamily: "monospace",
+                fontSize: 12,
+                letterSpacing: "0.24em",
+                textTransform: "uppercase",
+                background: "rgba(10,10,20,0.92)",
+                color: blink ? "#fbbf24" : "rgba(251,191,36,0.4)",
+                border: "2px solid #fbbf24",
+                boxShadow: "0 0 0 4px rgba(10,10,20,0.92), 0 0 0 5px rgba(251,191,36,0.35), 0 18px 40px rgba(0,0,0,0.7)",
+                textDecoration: "none",
+                transition: "color 200ms ease",
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#f0ece4" }}>{s.value}</div>
-              <div style={{ marginTop: 2, fontFamily: "monospace", fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(240,236,228,0.55)", lineHeight: 1.2 }}>
-                {s.label}
-              </div>
-            </div>
-          ))}
-        </div>
+              ▼ PRESS ↓ TO PLAY
+            </a>
+          </div>
 
-        <div style={{ marginTop: 28, display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap", fontFamily: "monospace", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase" }}>
-          <Link to="/cv" style={linkStyle}>⬇ Full CV</Link>
-          <a href={`mailto:${HERO.email}`} style={linkStyle}>✉ Email</a>
-          <a href={HERO.links.linkedin} target="_blank" rel="noreferrer" style={linkStyle}>LinkedIn</a>
+          {/* Stat grid */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 8,
+              maxWidth: 520,
+              margin: "0 auto",
+            }}
+          >
+            {HERO.stats.slice(0, 6).map((s, i) => (
+              <div
+                key={s.label}
+                style={{
+                  padding: "10px 8px",
+                  border: "1px solid rgba(251,191,36,0.25)",
+                  background: "rgba(10,10,20,0.7)",
+                  opacity: phase === "content" ? 1 : 0,
+                  transform: phase === "content" ? "translateY(0)" : "translateY(6px)",
+                  transition: `opacity 400ms ${300 + i * 60}ms ease, transform 400ms ${300 + i * 60}ms ease`,
+                }}
+              >
+                <div style={{ fontFamily: "monospace", fontSize: 14, fontWeight: 700, color: "#fbbf24", letterSpacing: "0.02em" }}>
+                  {s.value}
+                </div>
+                <div style={{ fontFamily: "monospace", fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(240,236,228,0.55)", marginTop: 3 }}>
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* Initial black screen */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute", inset: 0,
+          background: "#050310",
+          opacity: phase === "black" ? 1 : 0,
+          transition: "opacity 400ms ease",
+          pointerEvents: "none",
+        }}
+      />
     </section>
   );
 }
-
-const linkStyle: React.CSSProperties = {
-  padding: "6px 12px",
-  border: "1px solid rgba(240,236,228,0.3)",
-  color: "rgba(240,236,228,0.85)",
-  textDecoration: "none",
-};

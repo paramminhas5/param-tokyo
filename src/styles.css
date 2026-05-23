@@ -4,12 +4,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * Param Minhas — Two themes: Console (default, charcoal + amber) and Midnight (slate + mint).
- * Switch via [data-theme="midnight"] on <html>. Pixel scenes keep their per-chapter
- * palettes; theme tokens drive the UI chrome (HUD, cards, modals, inventory rail).
- */
+/* ── Fonts ─────────────────────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap");
 
+/* ── Design tokens ──────────────────────────────────────────────────────────── */
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -19,8 +17,6 @@
   --color-foreground: var(--fg);
   --color-card: var(--surface-2);
   --color-card-foreground: var(--fg);
-  --color-popover: var(--surface-2);
-  --color-popover-foreground: var(--fg);
   --color-primary: var(--accent);
   --color-primary-foreground: var(--accent-foreground);
   --color-secondary: var(--surface-2);
@@ -30,123 +26,131 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: oklch(0.62 0.24 25);
-  --color-destructive-foreground: oklch(0.98 0 0);
   --color-border: var(--border);
-  --color-input: var(--surface-2);
   --color-ring: var(--accent);
-  --color-ring-offset-background: var(--surface-1);
-  --color-chart-1: var(--accent);
-  --color-chart-2: oklch(0.70 0.18 145);
-  --color-chart-3: oklch(0.80 0.15 50);
-  --color-chart-4: oklch(0.65 0.22 280);
-  --color-chart-5: oklch(0.62 0.24 25);
-  --color-sidebar: var(--surface-2);
-  --color-sidebar-foreground: var(--fg);
-  --color-sidebar-primary: var(--accent);
-  --color-sidebar-primary-foreground: var(--accent-foreground);
-  --color-sidebar-accent: var(--accent);
-  --color-sidebar-accent-foreground: var(--accent-foreground);
-  --color-sidebar-border: var(--border);
-  --color-sidebar-ring: var(--accent);
-  /* legacy pm-* tokens kept so /cv keeps rendering */
-  --color-pm-deep: var(--surface-2);
-  --color-pm-deep-2: var(--surface-1);
-  --color-pm-magenta: var(--accent);
-  --color-pm-gold: var(--accent);
-  --color-pm-cyan: var(--accent);
-  --color-pm-paper: oklch(0.97 0.015 95);
-  --color-pm-ink: oklch(0.18 0.02 60);
-  --font-pixel: "Press Start 2P", monospace;
-  --font-display: "Inter", "Space Grotesk", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "Space Mono", "JetBrains Mono", monospace;
 }
 
-/* ---- Theme: Console (default) — warm charcoal + amber ---- */
+/* ── Console theme (default) ────────────────────────────────────────────────── */
 :root,
 :root[data-theme="console"] {
-  --radius: 0.5rem;
-  --surface-1: oklch(0.16 0.005 60);
-  --surface-2: oklch(0.21 0.006 60);
+  --radius: 0rem; /* sharp corners everywhere — pixel game aesthetic */
+  --surface-1: oklch(0.11 0.01 280);
+  --surface-2: oklch(0.15 0.01 280);
   --fg: oklch(0.96 0.012 80);
-  --muted-fg: oklch(0.66 0.02 70);
-  --accent: oklch(0.74 0.16 55);          /* warm amber/terracotta */
-  --accent-foreground: oklch(0.14 0.01 60);
-  --border: oklch(0.30 0.008 60);
+  --muted-fg: oklch(0.62 0.02 80);
+  --accent: oklch(0.74 0.16 55);
+  --accent-foreground: oklch(0.12 0.01 60);
+  --border: oklch(0.28 0.01 280);
   --pm-deep: var(--surface-2);
-  --pm-deep-2: var(--surface-1);
-  --pm-magenta: var(--accent);
-  --pm-gold: var(--accent);
-  --pm-cyan: var(--accent);
   --pm-paper: oklch(0.97 0.015 95);
-  --pm-ink: oklch(0.16 0.005 60);
+  --pm-ink: oklch(0.11 0.01 280);
 }
 
-/* ---- Theme: Midnight — near-black + mint ---- */
-:root[data-theme="midnight"] {
-  --surface-1: oklch(0.13 0.015 240);
-  --surface-2: oklch(0.18 0.02 240);
-  --fg: oklch(0.96 0.01 220);
-  --muted-fg: oklch(0.66 0.025 230);
-  --accent: oklch(0.78 0.16 165);         /* electric mint */
-  --accent-foreground: oklch(0.12 0.02 230);
-  --border: oklch(0.28 0.02 230);
-  --pm-deep: var(--surface-2);
-  --pm-deep-2: var(--surface-1);
-  --pm-magenta: var(--accent);
-  --pm-gold: var(--accent);
-  --pm-cyan: var(--accent);
-  --pm-paper: oklch(0.97 0.015 220);
-  --pm-ink: oklch(0.13 0.015 240);
-}
-
+/* ── Base ───────────────────────────────────────────────────────────────────── */
 @layer base {
-  * { border-color: var(--border); }
+  * { border-color: var(--border); box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    background: #050310;
+  }
+
   body {
     background-color: var(--surface-1);
     color: var(--fg);
     font-family: var(--font-display);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
+
+  /* Override all monospace to Space Mono */
+  code, kbd, pre, samp,
+  .font-mono, [style*="monospace"] {
+    font-family: var(--font-mono) !important;
+  }
+
   ::selection { background: var(--accent); color: var(--accent-foreground); }
 }
 
-.pixelated { image-rendering: pixelated; image-rendering: crisp-edges; }
-.font-pixel { font-family: var(--font-pixel); letter-spacing: 0.02em; }
-.font-mono { font-family: var(--font-mono); }
+/* ── Global game chrome ─────────────────────────────────────────────────────── */
 
-.bg-scanlines {
+/* Permanent scanline overlay on the whole page */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
   background-image: repeating-linear-gradient(
     0deg,
-    rgba(0,0,0,0.10) 0px,
-    rgba(0,0,0,0.10) 1px,
+    rgba(0, 0, 0, 0.055) 0px,
+    rgba(0, 0, 0, 0.055) 1px,
     transparent 1px,
     transparent 3px
   );
+  pointer-events: none;
+  z-index: 9999;
 }
 
-/* Legacy classes kept for the /cv route */
+/* CRT corner vignette */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, transparent 62%, rgba(0, 0, 0, 0.55) 100%);
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* ── Utility classes ────────────────────────────────────────────────────────── */
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.font-game {
+  font-family: var(--font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* ── Shared pixel-box UI components (used by /cv) ───────────────────────────── */
 .pixel-box {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
 }
 .pixel-box-cyan {
   background: var(--surface-2);
   border: 1px solid var(--accent);
-  border-radius: 8px;
 }
 
-@media print {
-  @page { size: A4; margin: 14mm; }
-  body { background: white !important; color: black !important; }
-  .no-print { display: none !important; }
-  .print-page { box-shadow: none !important; border: none !important; }
-}
-
-html { scroll-behavior: smooth; }
-
+/* ── Animations ─────────────────────────────────────────────────────────────── */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in { animation: fade-in 0.35s ease-out; }
+
+@keyframes pm-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-left { animation: slide-in-left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* Mobile touch scroll helper */
+@media (hover: none) {
+  body { touch-action: pan-y; }
+}
+
+/* ── Print ──────────────────────────────────────────────────────────────────── */
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body { background: white !important; color: black !important; }
+  body::before, body::after { display: none !important; }
+  .no-print { display: none !important; }
+}
