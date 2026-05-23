@@ -4,7 +4,7 @@ import { WORLDS } from "@/game/journey";
 import titleFrame from "@/assets/game/ui/title-card.png";
 import dialogFrame from "@/assets/game/ui/dialog-box.png";
 import { SkillIcon } from "./SkillIcon";
-import { collect, useSkills } from "@/game/state";
+import { addSkill as collect, useSkills } from "@/game/state";
 
 interface Props {
   chapter: Chapter;
