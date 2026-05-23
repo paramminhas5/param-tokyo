@@ -4,6 +4,8 @@ import { WorldStage } from "@/components/WorldStage";
 import { SkillBelt } from "@/components/SkillBelt";
 import { Intro } from "@/components/Intro";
 import { Outro } from "@/components/Outro";
+import { GlobalHero } from "@/components/GlobalHero";
+import { WorldCard } from "@/components/WorldCard";
 import { HERO, CHAPTERS } from "@/content/resume";
 
 export const Route = createFileRoute("/")({
@@ -24,10 +26,12 @@ function Index() {
   return (
     <div id="top" style={{ background: "#0a0a14", color: "#f0ece4" }}>
       <Hud />
+      <GlobalHero />
+      <WorldCard />
       <SkillBelt />
       <Intro />
-      {CHAPTERS.map((c, i) => (
-        <WorldStage key={c.id} chapter={c} isFirst={i === 0} />
+      {CHAPTERS.map((c) => (
+        <WorldStage key={c.id} chapter={c} />
       ))}
       <Outro />
     </div>
