@@ -3,24 +3,30 @@
  * with an explicit prompt, output path, and post-process recipe. Edit a
  * prompt and re-run `npm run art:gen` to re-roll just that asset.
  *
- * STYLE LOCK — every prompt MUST end with this clause for consistency:
+ * STYLE LOCK — Pokemon Gen 1-3 aesthetic (Game Boy Advance era):
  *
- *   "16-bit pixel art, retro game aesthetic, sharp pixel edges, no anti-aliasing,
- *    limited palette, screen-print poster style"
+ *   "authentic Pokemon pixel art style, Game Boy Advance era, isometric perspective,
+ *    56-color palette maximum, dithered gradients, sharp clean pixels, no blur,
+ *    no anti-aliasing, tile-based environmental design, Nintendo GBA aesthetic"
  *
- * Reference stack we're channeling: Sable + Katana Zero + Olly Moss posters + Fable.
- * The pixel post-process (nearest-neighbor downsample → upsample) is what
- * actually delivers the pixel-art look, regardless of how Flux renders.
+ * Reference stack: Pokemon Ruby/Sapphire/Emerald + FireRed/LeafGreen + Crystal.
+ * Key characteristics:
+ * - Isometric/top-down perspective with depth
+ * - Limited but vibrant color palette (56 colors max per scene)
+ * - Dithering for smooth transitions
+ * - Clean tile-based architecture
+ * - Environmental storytelling through objects
  */
 
 const STYLE_LOCK =
-  "16-bit pixel art, retro game aesthetic, sharp pixel edges, no anti-aliasing, " +
-  "limited palette, screen-print poster style";
+  "authentic Pokemon pixel art style, Game Boy Advance era, isometric perspective, " +
+  "56-color palette maximum, dithered gradients, sharp clean pixels, no blur, " +
+  "no anti-aliasing, tile-based environmental design, Nintendo GBA aesthetic";
 
 const SILHOUETTE_LOCK =
-  "single horizontal silhouette band, pure black on solid white background, " +
-  "no detail interior, no gradient, no shading, sharp clean silhouette edge, " +
-  "screen-print poster style, Olly Moss inspired";
+  "Pokemon-style environment layer, side-scrolling perspective like Pokemon ranger zones, " +
+  "clean silhouette shapes with minimal interior detail, black foreground on white background, " +
+  "environmental storytelling, sharp pixel edges, tile-based design";
 
 // Layer dimensions. Wide layers stretch to viewport at runtime.
 const SKY = { width: 1024, height: 768 };
@@ -32,112 +38,122 @@ const HERO_FRAME = { width: 768, height: 1024 };
 /**
  * Per-world creative briefs. Each gets four parallax layers + one chapter poster.
  * Accent colors come from src/game/journey.ts → keep in sync if those change.
+ * 
+ * Pokemon aesthetic notes:
+ * - Sky: dithered gradients like Pokemon Emerald route backgrounds
+ * - Layers: environmental storytelling through recognizable objects
+ * - Posters: Pokemon trainer card style with character + environment
  */
 const WORLD_BRIEFS = {
   origin: {
     accent: "#fbbf24",
     sky:
-      "warm dawn sky over Bengaluru, gradient amber to deep purple, scattered stars fading, " +
-      "soft cumulus clouds at horizon, painted moebius style",
-    far: "distant low rolling hills with silhouettes of antenna towers and a single banyan tree on the horizon",
-    mid: "silhouettes of small two-story houses, water tower, telegraph poles, scattered trees",
-    near: "silhouettes of a wooden fence, a vintage CRT television, a cassette deck, a desk lamp, a stack of magazines",
+      "Pokemon GBA style sky background, warm dawn gradient from amber yellow to deep purple, " +
+      "dithered gradient transitions, scattered twinkling stars fading out, " +
+      "soft pixelated clouds at horizon, clean 56-color palette",
+    far: "distant rolling hills with antenna tower silhouettes and single large banyan tree, Pokemon route style, clean tile-based design",
+    mid: "small two-story Indian houses, water tower structure, wooden telegraph poles, scattered trees, Pokemon town aesthetic",
+    near: "wooden fence tiles, vintage CRT television sprite, cassette deck object, desk lamp, magazine stack, Pokemon room decoration style",
     poster:
-      "Olly Moss style movie poster, single character silhouette of a young coder at a CRT computer at dawn, " +
-      "amber and deep purple palette, title text 'ORIGIN' at top, '2010' at bottom",
+      "Pokemon trainer card style, pixel art character sprite sitting at CRT computer during dawn, " +
+      "amber and purple color palette, clean GBA aesthetic, title 'ORIGIN' at top, '2010' at bottom, " +
+      "environmental storytelling like Pokemon FireRed/LeafGreen",
   },
   grp: {
     accent: "#22d3ee",
     sky:
-      "dusk sky over a 2010 Indian tech park, deep purple gradient to teal, " +
-      "scattered code-lights like distant stars, painted",
-    far: "silhouette of dense city skyline with radio towers and one tall office building",
-    mid: "silhouettes of office buildings with small windows, satellite dishes, electrical poles",
-    near: "silhouettes of computer monitors, price tag stacks, server rack, shopping carts",
+      "Pokemon GBA style night sky, deep purple to teal dithered gradient, " +
+      "scattered glowing pixel dots like code stars, clean palette transitions",
+    far: "dense city skyline silhouettes with radio towers and tall office building, Pokemon city route backdrop style",
+    mid: "office buildings with small glowing window pixels, satellite dishes, electrical poles, Pokemon urban zone aesthetic",
+    near: "computer monitor sprites, floating price tag objects, server rack tile, shopping cart sprites, GBA object design",
     poster:
-      "Olly Moss style poster, silhouette of person at desk surrounded by floating price tags, " +
-      "deep purple and cyan palette, title 'GETRIGHTPRICE' at top, '2010' at bottom",
+      "Pokemon trainer card style, pixel art character at desk surrounded by floating price tag objects, " +
+      "deep purple and cyan palette, GBA aesthetic, title 'GETRIGHTPRICE' at top, '2010' at bottom",
   },
   hab: {
     accent: "#e84393",
     sky:
-      "warm afternoon Bengaluru sky, peach to coral pink to amber gradient, " +
-      "soft scattered cumulus clouds, painted moebius style",
-    far: "silhouette of distant rolling hills, a single hilltop temple, electrical pylons",
-    mid: "silhouettes of low-rise rental housing blocks, three TO LET billboards, a tall coconut tree",
-    near: "silhouettes of an autorickshaw, a parked motorcycle, a street dog sitting, a wooden TO LET sign",
+      "Pokemon GBA style afternoon sky, peach to coral pink to amber dithered gradient, " +
+      "soft pixelated cumulus clouds, warm color palette like Pokemon Ruby/Sapphire desert routes",
+    far: "distant rolling hills with small hilltop temple structure, electrical pylon towers, Pokemon route horizon style",
+    mid: "low-rise rental housing block tiles, three TO LET billboard sprites, tall coconut palm tree, Pokemon town suburban area",
+    near: "autorickshaw vehicle sprite, parked motorcycle object, sitting street dog sprite, wooden TO LET sign tile, GBA object style",
     poster:
-      "Olly Moss style poster, silhouette of person handing keys, low-rise houses behind, " +
-      "warm peach pink palette, title 'HAB' at top, '2012' at bottom",
+      "Pokemon trainer card style, pixel art character handing key item sprite, low-rise houses in background, " +
+      "warm peach pink palette, GBA aesthetic, title 'HAB' at top, '2012' at bottom",
   },
   octo: {
     accent: "#22d3ee",
     sky:
-      "deep navy night sky, single full moon, scattered glowing data points like fireflies, " +
-      "painted, atmospheric",
-    far: "silhouette of tall datacenter towers and antenna farms on the horizon",
-    mid: "silhouettes of server racks, glowing terminal screens, AC vents, hanging cables",
-    near: "silhouettes of floating chat speech bubbles, a mechanical keyboard, holographic UI panels",
+      "Pokemon GBA style deep navy night sky, single large pixelated full moon, " +
+      "scattered glowing data point particles like Pokemon mystery zone, dithered dark gradient",
+    far: "tall datacenter tower silhouettes and antenna farm structures on horizon, Pokemon tech facility aesthetic",
+    mid: "server rack rows, glowing terminal screen tiles, AC vent sprites, hanging cable objects, Pokemon lab interior style",
+    near: "floating chat bubble sprites, mechanical keyboard object, holographic UI panel tiles, GBA tech objects",
     poster:
-      "Olly Moss style poster, silhouette of person speaking to a glowing chatbot face, " +
-      "deep navy and electric cyan palette, title 'OCTO' at top, '2013-17' at bottom",
+      "Pokemon trainer card style, pixel art character speaking to glowing chatbot face sprite, " +
+      "deep navy and electric cyan palette, GBA aesthetic, title 'OCTO' at top, '2013-17' at bottom",
   },
   investopad: {
     accent: "#fbbf24",
     sky:
-      "emerald and gold morning sky, soft painted cumulus clouds, painted moebius style",
-    far: "silhouette of glass office towers with vault doors at base, distant skyline",
-    mid: "silhouettes of pitch screens with charts, founder desks, large stock ticker board",
-    near: "silhouettes of stacks of money, coffee cups, open laptops, leather-bound notebooks",
+      "Pokemon GBA style morning sky, emerald green to gold dithered gradient, " +
+      "soft pixelated clouds, optimistic palette like Pokemon Emerald victory road",
+    far: "glass office tower silhouettes with vault door structures at base, distant skyline, Pokemon corporate zone",
+    mid: "pitch screen tiles with chart sprites, founder desk objects, large stock ticker board, Pokemon office aesthetic",
+    near: "stacked money pile sprites, coffee cup objects, open laptop tiles, leather notebook items, GBA luxury objects",
     poster:
-      "Olly Moss style poster, silhouette of investor at desk reviewing pitches, " +
-      "emerald and gold palette, title 'INVESTOPAD' at top, 'POST-OCTO' at bottom",
+      "Pokemon trainer card style, pixel art investor character at desk reviewing pitch documents, " +
+      "emerald and gold palette, GBA aesthetic, title 'INVESTOPAD' at top, 'POST-OCTO' at bottom",
   },
   solesearch: {
     accent: "#ff6b35",
     sky:
-      "vibrant festival evening sky, orange to pink gradient, lens flares, scattered confetti, painted",
-    far: "silhouettes of stadium lights, stage trusses, distant crowd",
-    mid: "silhouettes of LED walls, giant sneaker sculpture, dense crowd of fans",
-    near: "silhouettes of stacked sneaker boxes, a microphone stand, DJ deck, hanging banners",
+      "Pokemon GBA style festival evening sky, orange to hot pink dithered gradient, " +
+      "lens flare pixels, scattered confetti particles, vibrant palette like Pokemon contest halls",
+    far: "stadium light tower silhouettes, stage truss structures, distant crowd silhouette wave",
+    mid: "LED wall tiles, giant sneaker sculpture object, dense crowd of fan sprites, Pokemon event venue aesthetic",
+    near: "stacked sneaker box tiles, microphone stand sprite, DJ deck object, hanging banner items, GBA festival objects",
     poster:
-      "Olly Moss style poster, silhouette of person holding sneaker high, crowd silhouettes below, " +
-      "orange and hot pink palette, title 'SOLESEARCH' at top, '2018-23' at bottom",
+      "Pokemon trainer card style, pixel art character holding sneaker item sprite high, crowd silhouettes below, " +
+      "orange and hot pink palette, GBA aesthetic, title 'SOLESEARCH' at top, '2018-23' at bottom",
   },
   fere: {
     accent: "#22d3ee",
     sky:
-      "deep cyan and electric blue holographic sky, glowing grid lines fading to horizon, " +
-      "scattered floating data dots, painted cyberpunk",
-    far: "silhouettes of crypto towers, a holographic globe floating above the city",
-    mid: "silhouettes of trading terminals, server-stack racks, walls of glowing candlestick charts",
-    near: "silhouettes of cable bundles, holographic mini-charts, a cyborg cat statue",
+      "Pokemon GBA style holographic sky, deep cyan to electric blue dithered gradient, " +
+      "glowing pixel grid lines fading to horizon, floating data dot particles, Pokemon cyber zone aesthetic",
+    far: "crypto tower silhouettes, holographic globe structure floating above city, Pokemon futuristic city backdrop",
+    mid: "trading terminal tiles, server stack rack objects, glowing candlestick chart wall, Pokemon tech facility interior",
+    near: "cable bundle sprites, holographic mini-chart tiles, cyborg cat statue object, GBA futuristic objects",
     poster:
-      "Olly Moss style poster, silhouette of autonomous AI agent figure manipulating glowing markets, " +
-      "cyan and electric blue palette, title 'FERE.AI' at top, '2024-25' at bottom",
+      "Pokemon trainer card style, pixel art autonomous AI agent character manipulating glowing market sprites, " +
+      "cyan and electric blue palette, GBA aesthetic, title 'FERE.AI' at top, '2024-25' at bottom",
   },
   ccd: {
     accent: "#ec4899",
     sky:
-      "deep magenta to violet to pink disco sky, scattered confetti, glowing disco-ball reflections, painted",
-    far: "silhouettes of stage trusses, speaker stacks, distant crowd silhouettes raising hands",
-    mid: "silhouettes of DJ booth, three dancing cats with raised paws, EQ visualization wall",
-    near: "silhouettes of synth keyboard, microphone, a single dancing cat in close-up",
+      "Pokemon GBA style disco sky, deep magenta to violet to pink dithered gradient, " +
+      "scattered confetti pixels, glowing disco ball reflection particles, Pokemon contest hall celebration aesthetic",
+    far: "stage truss silhouettes, speaker stack towers, distant crowd with raised hand sprites",
+    mid: "DJ booth platform, three dancing cat character sprites with raised paws, EQ visualization wall tiles, Pokemon party zone",
+    near: "synth keyboard object sprite, microphone stand, single close-up dancing cat character, GBA music objects",
     poster:
-      "Olly Moss style poster, silhouette of dancing cat under a disco ball with one DJ figure, " +
-      "magenta and pink palette, title 'CATS CAN DANCE' at top, 'NOW' at bottom",
+      "Pokemon trainer card style, pixel art dancing cat character under disco ball with DJ figure, " +
+      "magenta and pink palette, GBA aesthetic, title 'CATS CAN DANCE' at top, 'NOW' at bottom",
   },
   iterate: {
     accent: "#f59e0b",
     sky:
-      "warm gold and amber dawn-of-new-thing sky, slow drifting particles, " +
-      "soft painted clouds, optimistic",
-    far: "silhouette of glass agency tower, modular building blocks, distant skyline",
-    mid: "silhouettes of glowing core machine, conveyor belt, tall robotic crane arm",
-    near: "silhouettes of computer modules, brand boards, floating prompt cards, coffee mugs",
+      "Pokemon GBA style warm golden dawn sky, amber to gold dithered gradient, " +
+      "slow drifting particle pixels, soft clouds, optimistic palette like Pokemon new journey start",
+    far: "glass agency tower silhouette, modular building block structures, distant skyline, Pokemon future city aesthetic",
+    mid: "glowing core machine tiles, conveyor belt objects, tall robotic crane arm sprite, Pokemon tech factory interior",
+    near: "computer module tiles, brand board sprites, floating prompt card objects, coffee mug items, GBA workflow objects",
     poster:
-      "Olly Moss style poster, silhouette of person directing AI workflow with raised hand, " +
-      "gold and amber palette, title 'ITERATE' at top, 'NOW' at bottom",
+      "Pokemon trainer card style, pixel art character directing AI workflow with raised hand, " +
+      "gold and amber palette, GBA aesthetic, title 'ITERATE' at top, 'NOW' at bottom",
   },
 };
 
@@ -183,9 +199,10 @@ export function buildManifest() {
     key: "title-poster",
     out: "public/game/posters/title.png",
     prompt:
-      "Olly Moss style movie poster for 'PARAM TOKYO — A RESUME IN 9 CHAPTERS', " +
-      "single character silhouette of a hooded protagonist standing before nine glowing world icons, " +
-      "amber gold sun behind, deep navy sky, screen-print bold flat shapes, " +
+      "Pokemon game title screen style for 'PARAM TOKYO — A RESUME IN 9 CHAPTERS', " +
+      "pixel art hooded protagonist character sprite standing before nine glowing world icon badges, " +
+      "amber gold sun behind character, deep navy sky background, " +
+      "clean GBA aesthetic like Pokemon FireRed/LeafGreen title screen, dithered gradients, " +
       `${STYLE_LOCK}`,
     size: TITLE,
     pixelScale: 4,
@@ -196,15 +213,16 @@ export function buildManifest() {
   // Two distinct frames, composited into a 6-cell sheet at runtime.
   // Cells 0+1 = idle pose; cells 2..5 = walk pose with x-offsets for parallax illusion.
   const HERO_PROMPT_BASE =
-    "full-body pixel art game character, " +
-    "side-view 3/4 angle, hooded urban explorer, dark cargo jacket with cyan trim, " +
-    "tactical pants, boots, slung satchel, neutral expression, " +
-    "isolated on solid pure white background, no shadow, no ground, " +
-    "consistent character design, ";
+    "Pokemon game character sprite, full-body pixel art, " +
+    "side-view walking sprite like Pokemon trainer overworld sprite, " +
+    "hooded urban explorer character, dark cargo jacket with cyan accent trim, " +
+    "tactical pants, boots, slung messenger bag, clean sprite design, " +
+    "isolated on pure white background #FFFFFF, no shadow, no ground tile, " +
+    "consistent character proportions, Game Boy Advance sprite style, ";
   items.push({
     key: "hero-idle",
     out: "public/game/hero/_hero-idle.png", // staging file; sheet is composed below
-    prompt: `${HERO_PROMPT_BASE} standing relaxed idle pose, weight on right leg, ${STYLE_LOCK}`,
+    prompt: `${HERO_PROMPT_BASE} standing idle pose with slight weight shift, relaxed stance, ${STYLE_LOCK}`,
     size: HERO_FRAME,
     pixelScale: 4,
     kind: "character",
@@ -213,7 +231,7 @@ export function buildManifest() {
   items.push({
     key: "hero-walk",
     out: "public/game/hero/_hero-walk.png",
-    prompt: `${HERO_PROMPT_BASE} mid-stride walking left-to-right, right leg forward, slight forward lean, satchel swinging, ${STYLE_LOCK}`,
+    prompt: `${HERO_PROMPT_BASE} mid-stride walking animation frame, right leg forward step, slight lean, bag swinging, ${STYLE_LOCK}`,
     size: HERO_FRAME,
     pixelScale: 4,
     kind: "character",

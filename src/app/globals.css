@@ -54,6 +54,10 @@
   html {
     scroll-behavior: smooth;
     background: #050310;
+    /* Optimize font rendering for pixel art aesthetic */
+    text-rendering: optimizeSpeed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
@@ -62,6 +66,9 @@
     font-family: var(--font-display);
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    /* GPU acceleration for entire page */
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
   }
 
   code,
@@ -76,6 +83,23 @@
   ::selection {
     background: var(--accent);
     color: var(--accent-foreground);
+  }
+  
+  /* GPU acceleration for all animated elements */
+  [style*="transform"],
+  [style*="animation"],
+  [style*="transition"] {
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+  }
+  
+  /* Optimize image rendering for pixel art */
+  img[style*="pixelated"],
+  [style*="image-rendering"] {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
   }
 }
 

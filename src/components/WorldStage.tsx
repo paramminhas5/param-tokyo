@@ -18,18 +18,18 @@ interface Props {
 }
 
 /**
- * One world section, rendered as a 9-layer cinematic parallax stack.
+ * One world section, rendered as a 5-layer optimized parallax stack.
+ * Reduced from 9 to 5 layers for better performance and visual clarity.
  *
  * Layers, back to front (z increases downward):
- *   1. SKY (painted, slow drift)
- *   2. FAR silhouettes (slow parallax)
- *   3. MID silhouettes (medium parallax)
- *   4. NEAR silhouettes (fast parallax, sits at the horizon)
- *   5. Ground line (per-world accent)
- *   6. Props + NPCs (fastest parallax, stand on ground)
- *   7. Skill pickups (float above ground)
- *   8. Color grade (per-world tint, multiply blend)
- *   9. Vignette (corner darkening)
+ *   1. SKY (painted, subtle drift)
+ *   2. FAR silhouettes (30% opacity, slow parallax) - atmospheric depth
+ *   3. MID silhouettes (60% opacity, medium parallax) - environmental context
+ *   4. Ground plane (accent color line, solid)
+ *   5. Props + NPCs + Skills (100% opacity, fast parallax, focal plane)
+ *
+ * REMOVED for clarity: NEAR layer (merged into mid), separate color grade layer,
+ * separate vignette layer. Color grading and vignette now applied as overlays.
  *
  * All parallax layers drift leftward as worldProgress goes 0→1, with magnitude
  * increasing toward the foreground. The hero (rendered globally) appears to
@@ -82,19 +82,18 @@ export function WorldStage({ chapter }: Props) {
   // Use 0..1 progress while active; clamp to 0/1 outside the section.
   const p = isActive ? worldProgress : worldIndex > chapter.index - 1 ? 1 : 0;
 
-  // Lazy mount: only render the heavy 9-layer art when within ±1 world of
+  // Lazy mount: only render the heavy 5-layer art when within ±1 world of
   // the active chapter. The empty <section> stays in the DOM with its full
   // minHeight so the progress engine still measures it correctly.
   // chapter.index is 1-based; worldIndex is 0-based (with -1 = intro, N = outro).
   const distance = Math.abs((chapter.index - 1) - Math.max(0, worldIndex));
   const isNear = distance <= 1;
 
-  // Parallax magnitudes — back to front, all drift LEFT.
-  const skyShift = p * -2;
-  const farShift = p * -6;
-  const midShift = p * -12;
-  const nearShift = p * -20;
-  const propShift = p * -26;
+  // Optimized parallax magnitudes — fewer layers, clearer depth cues
+  const skyShift = p * -2;    // subtle background drift
+  const farShift = p * -4;    // reduced from -6, 30% opacity
+  const midShift = p * -10;   // reduced from -12, 60% opacity  
+  const propShift = p * -18;  // reduced from -26, 100% opacity focal plane
 
   return (
     <section
@@ -110,8 +109,8 @@ export function WorldStage({ chapter }: Props) {
       }}
     >
       {!isNear && (
-        // Far-off worlds render only a tinted placeholder. Saves ~6 image fetches
-        // and ~9 DOM layers per world until the user gets close.
+        // Far-off worlds render only a tinted placeholder. Saves ~4 image fetches
+        // and ~5 DOM layers per world until the user gets close.
         <div
           aria-hidden
           style={{
@@ -133,41 +132,32 @@ export function WorldStage({ chapter }: Props) {
           backgroundSize: "cover",
           backgroundPosition: "center top",
           backgroundAttachment: "fixed",
-          transform: `translateX(${skyShift}%)`,
+          transform: `translate3d(${skyShift}%, 0, 0)`,
           transition: "transform 80ms linear",
           willChange: "transform",
           imageRendering: "pixelated",
         }}
       />
 
-      {/* L2 — FAR silhouettes ───────────────────────────────── */}
+      {/* L2 — FAR silhouettes (30% opacity for atmospheric depth) */}
       <ParallaxBand
         src={world.far}
-        bottom="calc(16vh + 26vh)"
-        height="22vh"
+        bottom="calc(16vh + 24vh)"
+        height="24vh"
         shift={farShift}
-        opacity={0.85}
+        opacity={0.3}
       />
 
-      {/* L3 — MID silhouettes ───────────────────────────────── */}
+      {/* L3 — MID silhouettes (60% opacity for environmental context) */}
       <ParallaxBand
         src={world.mid}
         bottom="calc(16vh + 8vh)"
-        height="28vh"
+        height="30vh"
         shift={midShift}
-        opacity={0.95}
+        opacity={0.6}
       />
 
-      {/* L4 — NEAR silhouettes ──────────────────────────────── */}
-      <ParallaxBand
-        src={world.near}
-        bottom="16vh"
-        height="32vh"
-        shift={nearShift}
-        opacity={1}
-      />
-
-      {/* Bottom atmosphere glow (per-world accent) */}
+      {/* Bottom atmosphere glow (per-world accent) - stronger for Pokemon feel */}
       <div
         aria-hidden
         style={{
@@ -175,13 +165,13 @@ export function WorldStage({ chapter }: Props) {
           left: 0,
           right: 0,
           bottom: 0,
-          height: "30%",
-          background: `radial-gradient(ellipse at 50% 100%, ${world.accent}33 0%, transparent 75%)`,
+          height: "35%",
+          background: `radial-gradient(ellipse at 50% 100%, ${world.accent}44 0%, ${world.accent}22 35%, transparent 80%)`,
           pointerEvents: "none",
         }}
       />
 
-      {/* L5 — Ground line ───────────────────────────────────── */}
+      {/* L4 — Ground plane (solid accent line) ──────────────── */}
       <div
         aria-hidden
         style={{
@@ -189,14 +179,14 @@ export function WorldStage({ chapter }: Props) {
           left: 0,
           right: 0,
           bottom: "16vh",
-          height: 2,
-          background: `linear-gradient(90deg, transparent, ${world.accent}88 18%, ${world.accent}88 82%, transparent)`,
-          boxShadow: `0 0 12px ${world.accent}66`,
+          height: 3,
+          background: `linear-gradient(90deg, transparent, ${world.accent}cc 18%, ${world.accent}cc 82%, transparent)`,
+          boxShadow: `0 0 16px ${world.accent}88, 0 4px 24px ${world.accent}44`,
           zIndex: 6,
         }}
       />
 
-      {/* L6 — Props (fastest parallax) ──────────────────────── */}
+      {/* L5 — Props + NPCs + Skills (focal plane, fastest parallax) */}
       <div
         aria-hidden
         style={{
@@ -205,7 +195,7 @@ export function WorldStage({ chapter }: Props) {
           right: 0,
           bottom: "16vh",
           height: "32vh",
-          transform: `translateX(${propShift}%)`,
+          transform: `translate3d(${propShift}%, 0, 0)`,
           transition: "transform 100ms linear",
           willChange: "transform",
           pointerEvents: "none",
@@ -254,7 +244,7 @@ export function WorldStage({ chapter }: Props) {
         ))}
       </div>
 
-      {/* L7 — Skill pickups */}
+      {/* Skill pickups */}
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 9 }}>
         {chapter.pickups.map((pid, i) => {
           const step = 100 / (chapter.pickups.length + 1);
@@ -318,43 +308,33 @@ export function WorldStage({ chapter }: Props) {
         />
       )}
 
-      {/* L8 — Color grade (per-world tint, multiply blend) ─── */}
+      {/* Integrated color grade + vignette overlay */}
       <div
         aria-hidden
         style={{
           position: "absolute",
           inset: 0,
-          background: `linear-gradient(180deg, ${world.ink}88 0%, ${world.ink}11 28%, transparent 55%, ${world.ink}66 90%, ${world.ink}cc 100%)`,
+          background: `
+            radial-gradient(ellipse at 50% 60%, transparent 40%, rgba(0,0,0,0.6) 100%),
+            linear-gradient(180deg, ${world.ink}88 0%, ${world.ink}11 28%, transparent 55%, ${world.ink}66 90%, ${world.ink}cc 100%)
+          `,
           pointerEvents: "none",
           zIndex: 13,
           mixBlendMode: "multiply",
         }}
       />
 
-      {/* Per-world accent wash (lightly tints the whole section toward the world's signature) */}
+      {/* Per-world accent wash (Pokemon-style color tinting) */}
       <div
         aria-hidden
         style={{
           position: "absolute",
           inset: 0,
           background: world.accent,
-          opacity: 0.05,
+          opacity: 0.08,
           pointerEvents: "none",
           zIndex: 14,
           mixBlendMode: "color",
-        }}
-      />
-
-      {/* L9 — Vignette ─────────────────────────────────────── */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(ellipse at 50% 60%, transparent 45%, rgba(0,0,0,0.55) 100%)",
-          pointerEvents: "none",
-          zIndex: 15,
         }}
       />
 
@@ -416,7 +396,9 @@ export function WorldStage({ chapter }: Props) {
 /**
  * One parallax silhouette band. The image is rendered at 130% width so there's
  * overhang for the leftward drift to consume; image-rendering: pixelated keeps
- * the upscale crisp.
+ * the upscale crisp. Now uses translate3d for GPU acceleration.
+ * 
+ * Opacity controls atmospheric depth: far layers are more transparent.
  */
 function ParallaxBand({
   src,
@@ -440,10 +422,11 @@ function ParallaxBand({
         right: "-15%",
         bottom,
         height,
-        transform: `translateX(${shift}%)`,
+        transform: `translate3d(${shift}%, 0, 0)`,
         transition: "transform 100ms linear",
         willChange: "transform",
         pointerEvents: "none",
+        backfaceVisibility: "hidden",
       }}
     >
       <img
@@ -460,7 +443,9 @@ function ParallaxBand({
           objectPosition: "center bottom",
           imageRendering: "pixelated",
           opacity,
-          filter: "drop-shadow(0 14px 24px rgba(0,0,0,0.5))",
+          filter: opacity < 0.5 
+            ? "drop-shadow(0 8px 16px rgba(0,0,0,0.3))" 
+            : "drop-shadow(0 14px 24px rgba(0,0,0,0.5))",
         }}
       />
     </div>
