@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
 import { CHAPTERS } from "@/content/resume";
 import { WORLDS } from "@/game/journey";

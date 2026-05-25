@@ -1,5 +1,7 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { CHAPTERS } from "@/content/resume";
 import { useSkills } from "@/game/state";
 import { sfx } from "@/game/audio";
@@ -71,7 +73,7 @@ export function Hud() {
             </div>
 
             <Link
-              to="/cv"
+              href="/cv"
               style={{
                 fontFamily: "monospace", fontSize: 10, letterSpacing: "0.2em",
                 padding: "5px 10px",

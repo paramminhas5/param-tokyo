@@ -1,3 +1,5 @@
+"use client";
+
 import { SKILLS, type SkillId } from "@/content/resume";
 import { useSkills } from "@/game/state";
 import { SkillIcon } from "./SkillIcon";

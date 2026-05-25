@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
 import type { Chapter } from "@/content/resume";
 import { SKILLS } from "@/content/resume";

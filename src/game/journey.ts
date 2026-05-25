@@ -1,36 +1,22 @@
-import originBg from "@/assets/game/worlds/origin.jpg";
-import grpBg from "@/assets/game/worlds/getrightprice.jpg";
-import habBg from "@/assets/game/worlds/hab.jpg";
-import earlyaiBg from "@/assets/game/worlds/earlyai.jpg";
-import investopadBg from "@/assets/game/worlds/investopad.jpg";
-import solesearchBg from "@/assets/game/worlds/solesearch.jpg";
-import fereBg from "@/assets/game/worlds/fere.jpg";
-import ccdBg from "@/assets/game/worlds/catscandance.jpg";
-import iterateBg from "@/assets/game/worlds/iterate.jpg";
-
-import originFg from "@/assets/game/worlds/origin-fg.png";
-import grpFg from "@/assets/game/worlds/grp-fg.png";
-import habFg from "@/assets/game/worlds/hab-fg.png";
-import octoFg from "@/assets/game/worlds/octo-fg.png";
-import investopadFg from "@/assets/game/worlds/investopad-fg.png";
-import solesearchFg from "@/assets/game/worlds/solesearch-fg.png";
-import fereFg from "@/assets/game/worlds/fere-fg.png";
-import ccdFg from "@/assets/game/worlds/ccd-fg.png";
-import iterateFg from "@/assets/game/worlds/iterate-fg.png";
-
 import type { SkillId } from "@/content/resume";
 
-/** Per-chapter world art + signature accent. Swap the imports to replace assets. */
+/**
+ * Per-chapter world art + signature accent.
+ * Asset paths point at /public/game/worlds. Swap PNG/JPG files in place to swap art.
+ *
+ * PR 3 will add per-world `sky/far/mid/near` silhouette layers; for now each world
+ * still uses the existing 2-layer (bg + fg) system.
+ */
 export const WORLDS: Record<string, { bg: string; fg: string; accent: string; ink: string }> = {
-  origin:     { bg: originBg,     fg: originFg,     accent: "#fbbf24", ink: "#1a1a2e" },
-  grp:        { bg: grpBg,        fg: grpFg,        accent: "#22d3ee", ink: "#1a1a2e" },
-  hab:        { bg: habBg,        fg: habFg,        accent: "#e84393", ink: "#1a1a2e" },
-  octo:       { bg: earlyaiBg,    fg: octoFg,       accent: "#22d3ee", ink: "#1a1a2e" },
-  investopad: { bg: investopadBg, fg: investopadFg, accent: "#fbbf24", ink: "#1a1a2e" },
-  solesearch: { bg: solesearchBg, fg: solesearchFg, accent: "#ff6b35", ink: "#1a1a2e" },
-  fere:       { bg: fereBg,       fg: fereFg,       accent: "#22d3ee", ink: "#1a1a2e" },
-  ccd:        { bg: ccdBg,        fg: ccdFg,        accent: "#ec4899", ink: "#1a1a2e" },
-  iterate:    { bg: iterateBg,    fg: iterateFg,    accent: "#f59e0b", ink: "#1a1a2e" },
+  origin:     { bg: "/game/worlds/origin.jpg",        fg: "/game/worlds/origin-fg.png",     accent: "#fbbf24", ink: "#1a1a2e" },
+  grp:        { bg: "/game/worlds/getrightprice.jpg", fg: "/game/worlds/grp-fg.png",        accent: "#22d3ee", ink: "#1a1a2e" },
+  hab:        { bg: "/game/worlds/hab.jpg",           fg: "/game/worlds/hab-fg.png",        accent: "#e84393", ink: "#1a1a2e" },
+  octo:       { bg: "/game/worlds/earlyai.jpg",       fg: "/game/worlds/octo-fg.png",       accent: "#22d3ee", ink: "#1a1a2e" },
+  investopad: { bg: "/game/worlds/investopad.jpg",    fg: "/game/worlds/investopad-fg.png", accent: "#fbbf24", ink: "#1a1a2e" },
+  solesearch: { bg: "/game/worlds/solesearch.jpg",    fg: "/game/worlds/solesearch-fg.png", accent: "#ff6b35", ink: "#1a1a2e" },
+  fere:       { bg: "/game/worlds/fere.jpg",          fg: "/game/worlds/fere-fg.png",       accent: "#22d3ee", ink: "#1a1a2e" },
+  ccd:        { bg: "/game/worlds/catscandance.jpg",  fg: "/game/worlds/ccd-fg.png",        accent: "#ec4899", ink: "#1a1a2e" },
+  iterate:    { bg: "/game/worlds/iterate.jpg",       fg: "/game/worlds/iterate-fg.png",    accent: "#f59e0b", ink: "#1a1a2e" },
 };
 
 /** Skill → cell index in skills-sheet (6 cols × 4 rows = 24 cells). */
@@ -48,6 +34,7 @@ export const SKILL_ICON_INDEX: Record<SkillId, number> = {
 
 export const SKILL_SHEET_COLS = 6;
 export const SKILL_SHEET_ROWS = 4;
+export const SKILLS_SHEET_PATH = "/game/skills/skills-sheet.png";
 
 /**
  * Hero sheet v2: single horizontal strip, 6 frames.
@@ -55,13 +42,23 @@ export const SKILL_SHEET_ROWS = 4;
  */
 export const HERO_FRAMES = {
   cols: 6,
-  // Each cell is sheetWidth/cols × sheetHeight from the generated PNG (1920×512).
+  // Each cell is sheetWidth/cols × sheetHeight from the source PNG (1920×512).
   cellW: 1920 / 6,
   cellH: 512,
   idle: [0, 1] as const,
   walk: [2, 3, 4, 5] as const,
+  src: "/game/hero/hero-v2.png",
 };
 
 // Legacy export for the old v1 sheet (kept for now to avoid orphan imports).
 export const HERO_POSES = { idle: 0, walk: 1, climb: 2, sit: 3, point: 4, jump: 5 } as const;
 export const HERO_SHEET_COLS = 6;
+
+/** UI asset paths (formerly Vite-bundled imports). */
+export const UI_ASSETS = {
+  titleCard: "/game/ui/title-card.png",
+  paperBg: "/game/ui/paper-bg.jpg",
+  pickupOrb: "/game/ui/pickup-orb.png",
+  speechBubble: "/game/ui/speech-bubble.png",
+  dialogBox: "/game/ui/dialog-box.png",
+};

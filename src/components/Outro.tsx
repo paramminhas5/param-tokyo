@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { HERO } from "@/content/resume";
 import { HirePanel } from "./HirePanel";
 
@@ -48,7 +50,7 @@ export function Outro() {
             </a>
           </div>
           <div className="mt-3 flex items-center justify-center gap-2 flex-wrap font-mono text-[10px] uppercase tracking-[0.18em]">
-            <Link to="/cv" className="px-3 py-1.5 border border-[#f0ece4]/25 text-[#f0ece4]/75 hover:border-[#fbbf24] hover:text-[#fbbf24] transition">Full CV</Link>
+            <Link href="/cv" className="px-3 py-1.5 border border-[#f0ece4]/25 text-[#f0ece4]/75 hover:border-[#fbbf24] hover:text-[#fbbf24] transition">Full CV</Link>
             <a href={HERO.links.linkedin} target="_blank" rel="noreferrer" className="px-3 py-1.5 border border-[#f0ece4]/25 text-[#f0ece4]/75 hover:border-[#fbbf24] hover:text-[#fbbf24] transition">LinkedIn</a>
             <a href={HERO.links.twitter} target="_blank" rel="noreferrer" className="px-3 py-1.5 border border-[#f0ece4]/25 text-[#f0ece4]/75 hover:border-[#fbbf24] hover:text-[#fbbf24] transition">X</a>
             <a href={HERO.links.site} target="_blank" rel="noreferrer" className="px-3 py-1.5 border border-[#f0ece4]/25 text-[#f0ece4]/75 hover:border-[#fbbf24] hover:text-[#fbbf24] transition">Cats Can Dance</a>

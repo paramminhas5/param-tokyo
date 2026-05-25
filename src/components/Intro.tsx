@@ -1,7 +1,11 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { HERO, CHAPTERS } from "@/content/resume";
-import titleCard from "@/assets/game/ui/title-card.png";
-import paperBg from "@/assets/game/ui/paper-bg.jpg";
+import { UI_ASSETS } from "@/game/journey";
+
+const titleCard = UI_ASSETS.titleCard;
+const paperBg = UI_ASSETS.paperBg;
 
 /**
  * Cinematic title screen.

@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { SKILLS, type SkillId } from "@/content/resume";
 import { useSkills } from "@/game/state";

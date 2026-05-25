@@ -1,6 +1,9 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
-import heroSheet from "@/assets/game/hero/hero-v2.png";
 import { HERO_FRAMES } from "@/game/journey";
+
+const heroSheet = HERO_FRAMES.src;
 import { useProgress } from "@/game/progress";
 import { Spring } from "@/game/spring";
 import { sfx } from "@/game/audio";

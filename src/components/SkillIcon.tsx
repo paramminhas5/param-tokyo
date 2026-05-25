@@ -1,6 +1,12 @@
-import skillsSheet from "@/assets/game/skills/skills-sheet.png";
-import { SKILL_ICON_INDEX, SKILL_SHEET_COLS, SKILL_SHEET_ROWS } from "@/game/journey";
+import {
+  SKILL_ICON_INDEX,
+  SKILL_SHEET_COLS,
+  SKILL_SHEET_ROWS,
+  SKILLS_SHEET_PATH,
+} from "@/game/journey";
 import { SKILLS, type SkillId } from "@/content/resume";
+
+const skillsSheet = SKILLS_SHEET_PATH;
 
 interface Props {
   id: SkillId;

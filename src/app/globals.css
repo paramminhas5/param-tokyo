@@ -1,11 +1,7 @@
-@import "tailwindcss" source(none);
-@source "../src";
+@import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
-
-/* ── Fonts ─────────────────────────────────────────────────────────────────── */
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap");
 
 /* ── Design tokens ──────────────────────────────────────────────────────────── */
 @theme inline {
@@ -28,14 +24,14 @@
   --color-destructive: oklch(0.62 0.24 25);
   --color-border: var(--border);
   --color-ring: var(--accent);
-  --font-display: "Space Grotesk", system-ui, sans-serif;
-  --font-mono: "Space Mono", "JetBrains Mono", monospace;
+  --font-display: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-mono: var(--font-space-mono), "JetBrains Mono", monospace;
 }
 
 /* ── Console theme (default) ────────────────────────────────────────────────── */
 :root,
 :root[data-theme="console"] {
-  --radius: 0rem; /* sharp corners everywhere — pixel game aesthetic */
+  --radius: 0rem; /* sharp corners — pixel game aesthetic */
   --surface-1: oklch(0.11 0.01 280);
   --surface-2: oklch(0.15 0.01 280);
   --fg: oklch(0.96 0.012 80);
@@ -50,7 +46,10 @@
 
 /* ── Base ───────────────────────────────────────────────────────────────────── */
 @layer base {
-  * { border-color: var(--border); box-sizing: border-box; }
+  * {
+    border-color: var(--border);
+    box-sizing: border-box;
+  }
 
   html {
     scroll-behavior: smooth;
@@ -65,19 +64,23 @@
     overflow-x: hidden;
   }
 
-  /* Override all monospace to Space Mono */
-  code, kbd, pre, samp,
-  .font-mono, [style*="monospace"] {
+  code,
+  kbd,
+  pre,
+  samp,
+  .font-mono,
+  [style*="monospace"] {
     font-family: var(--font-mono) !important;
   }
 
-  ::selection { background: var(--accent); color: var(--accent-foreground); }
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-foreground);
+  }
 }
 
-/* ── Global game chrome ─────────────────────────────────────────────────────── */
-
-/* Permanent scanline overlay on the whole page */
-body::after {
+/* ── Game chrome (scoped to .game-chrome wrapper so /cv stays clean) ────────── */
+.game-chrome::after {
   content: "";
   position: fixed;
   inset: 0;
@@ -92,8 +95,7 @@ body::after {
   z-index: 9999;
 }
 
-/* CRT corner vignette */
-body::before {
+.game-chrome::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -114,7 +116,6 @@ body::before {
   text-transform: uppercase;
 }
 
-/* ── Shared pixel-box UI components (used by /cv) ───────────────────────────── */
 .pixel-box {
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -126,31 +127,55 @@ body::before {
 
 /* ── Animations ─────────────────────────────────────────────────────────────── */
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.animate-fade-in { animation: fade-in 0.35s ease-out; }
-
-@keyframes pm-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.6; }
+.animate-fade-in {
+  animation: fade-in 0.35s ease-out;
 }
 
 @keyframes slide-in-left {
-  from { opacity: 0; transform: translateX(-16px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
-.animate-slide-left { animation: slide-in-left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.animate-slide-left {
+  animation: slide-in-left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 
 /* Mobile touch scroll helper */
 @media (hover: none) {
-  body { touch-action: pan-y; }
+  body {
+    touch-action: pan-y;
+  }
 }
 
-/* ── Print ──────────────────────────────────────────────────────────────────── */
+/* ── Print (CV page) ────────────────────────────────────────────────────────── */
 @media print {
-  @page { size: A4; margin: 14mm; }
-  body { background: white !important; color: black !important; }
-  body::before, body::after { display: none !important; }
-  .no-print { display: none !important; }
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .game-chrome::before,
+  .game-chrome::after {
+    display: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
 }
