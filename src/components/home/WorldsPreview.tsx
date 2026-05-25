@@ -5,13 +5,14 @@ import { CHAPTERS, SKILLS } from "@/content/resume";
 import { WORLDS } from "@/game/journey";
 
 /**
- * Horizontal-scrolling chapter card strip. Each card is a linkable poster
- * with the world's bg art, an accent overlay, and the chapter metadata.
+ * Horizontal-scrolling chapter card strip.
+ *
+ * Each card uses the FAL-generated Olly-Moss-poster as its primary visual —
+ * a single image-per-card composition, much cleaner than the prior bg+fg
+ * composite. Click → /play#worldId scrolls into the corresponding section.
  *
  * Mobile: native horizontal scroll with snap.
- * Desktop: same strip, fits more cards in viewport.
- *
- * Click → /play#worldId scrolls into the corresponding world section.
+ * Desktop: same strip, fits more cards per viewport.
  */
 export function WorldsPreview() {
   return (
@@ -36,7 +37,7 @@ export function WorldsPreview() {
           paddingLeft: "clamp(1rem, 5vw, 4rem)",
           paddingRight: "clamp(1rem, 5vw, 4rem)",
           display: "flex",
-          gap: 20,
+          gap: 18,
           overflowX: "auto",
           scrollSnapType: "x mandatory",
           paddingBottom: 24,
@@ -54,7 +55,7 @@ export function WorldsPreview() {
               style={{
                 position: "relative",
                 flex: "0 0 auto",
-                width: "min(320px, 78vw)",
+                width: "min(280px, 78vw)",
                 aspectRatio: "3 / 4",
                 scrollSnapAlign: "start",
                 background: "#000",
@@ -62,44 +63,33 @@ export function WorldsPreview() {
                 color: "#f0ece4",
                 textDecoration: "none",
                 overflow: "hidden",
-                transition: "transform 200ms ease, box-shadow 200ms ease",
-                boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
+                boxShadow: "0 14px 38px rgba(0,0,0,0.55)",
               }}
             >
-              {/* Backdrop */}
-              <div
+              {/* Poster art */}
+              <img
+                src={w.poster}
+                alt={`${c.org} poster`}
                 style={{
                   position: "absolute",
                   inset: 0,
-                  backgroundImage: `url(${w.bg})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  filter: "saturate(0.85) contrast(1.05)",
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  imageRendering: "pixelated",
                 }}
               />
-              {/* Foreground silhouette */}
-              <div
-                aria-hidden
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  backgroundImage: `url(${w.fg})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center bottom",
-                  backgroundRepeat: "no-repeat",
-                  opacity: 0.85,
-                }}
-              />
-              {/* Color grade */}
+
+              {/* Vignette + scanlines pass */}
               <div
                 aria-hidden
                 style={{
                   position: "absolute",
                   inset: 0,
-                  background: `linear-gradient(180deg, ${w.ink}66 0%, transparent 35%, ${w.ink}cc 100%)`,
+                  background:
+                    "linear-gradient(180deg, rgba(10,10,20,0.5) 0%, transparent 30%, transparent 55%, rgba(10,10,20,0.96) 100%)",
                 }}
               />
-              {/* Scanlines */}
               <div
                 aria-hidden
                 style={{
@@ -111,7 +101,8 @@ export function WorldsPreview() {
                   mixBlendMode: "multiply",
                 }}
               />
-              {/* Top label */}
+
+              {/* Top label row */}
               <div
                 style={{
                   position: "absolute",
@@ -132,7 +123,8 @@ export function WorldsPreview() {
                 </span>
                 <span style={{ color: "rgba(240,236,228,0.7)" }}>{c.year}</span>
               </div>
-              {/* Bottom panel */}
+
+              {/* Bottom info panel */}
               <div
                 style={{
                   position: "absolute",
@@ -140,13 +132,11 @@ export function WorldsPreview() {
                   right: 0,
                   bottom: 0,
                   padding: "16px 16px 18px",
-                  background:
-                    "linear-gradient(180deg, transparent 0%, rgba(10,10,20,0.92) 60%, rgba(10,10,20,0.96) 100%)",
                 }}
               >
                 <h3
                   style={{
-                    fontSize: 22,
+                    fontSize: 20,
                     lineHeight: 1.05,
                     fontWeight: 700,
                     letterSpacing: "-0.02em",
@@ -168,20 +158,6 @@ export function WorldsPreview() {
                 >
                   {c.role}
                 </p>
-                <p
-                  style={{
-                    marginTop: 8,
-                    fontSize: 13,
-                    lineHeight: 1.45,
-                    color: "rgba(240,236,228,0.85)",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {c.cliff}
-                </p>
                 <div
                   style={{
                     marginTop: 10,
@@ -196,6 +172,7 @@ export function WorldsPreview() {
                   }}
                 >
                   <span
+                    aria-hidden
                     style={{
                       display: "inline-block",
                       width: 8,
@@ -206,6 +183,23 @@ export function WorldsPreview() {
                   {earnedSkill.name} · enter →
                 </div>
               </div>
+
+              {/* Corner pixel notches */}
+              {(["topL", "topR", "botL", "botR"] as const).map((corner) => (
+                <span
+                  key={corner}
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    width: 8,
+                    height: 8,
+                    background: w.accent,
+                    ...(corner.startsWith("top") ? { top: 4 } : { bottom: 4 }),
+                    ...(corner.endsWith("L") ? { left: 4 } : { right: 4 }),
+                    opacity: 0.85,
+                  }}
+                />
+              ))}
             </Link>
           );
         })}

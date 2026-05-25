@@ -7,6 +7,8 @@ import { GlobalHero } from "@/components/GlobalHero";
 import { WorldCard } from "@/components/WorldCard";
 import { WorldTransition } from "@/components/WorldTransition";
 import { WorldStage } from "@/components/WorldStage";
+import { WorldTitleSplash } from "@/components/WorldTitleSplash";
+import { CinematicGrain } from "@/components/CinematicGrain";
 import { SkillBelt } from "@/components/SkillBelt";
 import { MobileTouchScroll } from "@/components/MobileTouchScroll";
 
@@ -22,22 +24,29 @@ export const metadata: Metadata = {
 /**
  * Cinematic 9-world playable résumé.
  *
- * Mount order is critical — the fixed-position chrome (Hud, GlobalHero,
- * WorldCard, WorldTransition, SkillBelt) renders ABOVE the scrolling sections
- * (Intro → 9× WorldStage → Outro). The progress engine wires up via each
- * WorldStage's registerWorldEl on mount; the rest reacts via useProgress().
+ * Rendering stack (back → front):
+ *   - Scrolling content:  Intro → 9× WorldStage (each: 9-layer parallax) → Outro
+ *   - Fixed chrome:       Hud (top) · GlobalHero (mid) · WorldCard (corner)
+ *                         WorldTitleSplash (center, on world change)
+ *                         WorldTransition (letterbox + noise on world change)
+ *                         CinematicGrain (full-screen film grain)
+ *                         SkillBelt (bottom)
+ *   - Input layer:        MobileTouchScroll (touch swipe → scroll, no DOM)
+ *
+ * The progress engine wires up via each WorldStage's registerWorldEl on mount.
  */
 export default function PlayPage() {
   return (
     <main className="game-chrome" style={{ position: "relative", background: "#050310" }}>
-      {/* Input layer — one-shot effect components, no DOM */}
       <MobileTouchScroll />
 
       {/* Fixed-position cinematic chrome */}
       <Hud />
       <GlobalHero />
       <WorldCard />
+      <WorldTitleSplash />
       <WorldTransition />
+      <CinematicGrain />
 
       {/* Scrolling content stack */}
       <Intro />
@@ -46,7 +55,6 @@ export default function PlayPage() {
       ))}
       <Outro />
 
-      {/* Bottom inventory belt */}
       <SkillBelt />
     </main>
   );
