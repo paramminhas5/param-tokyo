@@ -117,7 +117,7 @@ export function SkillBelt() {
                   {SKILLS[selected].earnedIn} · {SKILLS[selected].year}
                 </div>
               </div>
-              <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", fontSize: 16, color: "rgba(240,236,228,0.6)", cursor: "pointer" }}>✕</button>
+              <button onClick={() => setSelected(null)} aria-label="Close skill detail" style={{ background: "transparent", border: "none", fontSize: 16, color: "rgba(240,236,228,0.6)", cursor: "pointer" }}>✕</button>
             </div>
             <p style={{ marginTop: 16, fontSize: 13, lineHeight: 1.5, color: "rgba(240,236,228,0.85)" }}>
               {SKILLS[selected].howUsed}

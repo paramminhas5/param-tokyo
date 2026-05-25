@@ -82,6 +82,13 @@ export function WorldStage({ chapter }: Props) {
   // Use 0..1 progress while active; clamp to 0/1 outside the section.
   const p = isActive ? worldProgress : worldIndex > chapter.index - 1 ? 1 : 0;
 
+  // Lazy mount: only render the heavy 9-layer art when within ±1 world of
+  // the active chapter. The empty <section> stays in the DOM with its full
+  // minHeight so the progress engine still measures it correctly.
+  // chapter.index is 1-based; worldIndex is 0-based (with -1 = intro, N = outro).
+  const distance = Math.abs((chapter.index - 1) - Math.max(0, worldIndex));
+  const isNear = distance <= 1;
+
   // Parallax magnitudes — back to front, all drift LEFT.
   const skyShift = p * -2;
   const farShift = p * -6;
@@ -102,6 +109,20 @@ export function WorldStage({ chapter }: Props) {
         background: world.ink,
       }}
     >
+      {!isNear && (
+        // Far-off worlds render only a tinted placeholder. Saves ~6 image fetches
+        // and ~9 DOM layers per world until the user gets close.
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: `linear-gradient(180deg, ${world.ink} 0%, ${world.accent}11 50%, ${world.ink} 100%)`,
+          }}
+        />
+      )}
+
+      {isNear && (<>
       {/* L1 — SKY ───────────────────────────────────────────── */}
       <div
         aria-hidden
@@ -376,6 +397,7 @@ export function WorldStage({ chapter }: Props) {
           onDismiss={() => setShowMiniGame(false)}
         />
       )}
+      </>)}
 
       <style>{`
         @keyframes pm-float {

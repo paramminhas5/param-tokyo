@@ -38,6 +38,9 @@ export const metadata: Metadata = {
 export default function PlayPage() {
   return (
     <main className="game-chrome" style={{ position: "relative", background: "#050310" }}>
+      <a href="#start" className="skip-link">
+        Skip to first world
+      </a>
       <MobileTouchScroll />
 
       {/* Fixed-position cinematic chrome */}
@@ -50,6 +53,7 @@ export default function PlayPage() {
 
       {/* Scrolling content stack */}
       <Intro />
+      <div id="start" />
       {CHAPTERS.map((chapter) => (
         <WorldStage key={chapter.id} chapter={chapter} />
       ))}
