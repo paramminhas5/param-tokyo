@@ -38,7 +38,7 @@ export function SkillBag({ open, onClose, onSelect }: Props) {
             <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-[#fbbf24]">Skill bag</div>
             <h2 className="text-xl font-semibold text-[#f0ece4]">{earned.length} of {all.length} earned</h2>
           </div>
-          <button onClick={onClose} className="font-mono text-sm text-[#f0ece4]/60 hover:text-[#f0ece4]">✕</button>
+          <button onClick={onClose} className="font-mono text-sm text-[#f0ece4]/60 hover:text-[#f0ece4]" aria-label="Close skill bag">✕</button>
         </div>
 
         {Object.entries(grouped).map(([family, ids]) => (

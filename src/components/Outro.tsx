@@ -21,7 +21,7 @@ export function Outro() {
           ★ Quest complete · End of demo
         </div>
         <h2 className="mt-4 text-3xl sm:text-5xl font-semibold tracking-tight text-[#f0ece4]" style={{ fontFamily: "var(--font-display)" }}>
-          Let's build the next world.
+          Let&apos;s build the next world.
         </h2>
         <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.18em] text-[#f0ece4]/60">{HERO.location}</p>
 

@@ -47,9 +47,20 @@ export function GlobalHero() {
     sfx.warp();
   }, [worldIndex]);
 
-  // Spring RAF loop
+  // Spring RAF loop. Reduced-motion users get an instant snap to target
+  // instead of the spring animation — keeps the visual but skips the motion.
   useEffect(() => {
     if (!mounted) return;
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+      spring.current.snap(targetX);
+      ySpring.current.snap(0);
+      setDisplayX(targetX);
+      setDisplayY(0);
+      return;
+    }
     lastTime.current = performance.now();
 
     const tick = (t: number) => {
