@@ -125,10 +125,11 @@ export function GlobalHero() {
         bottom: `calc(16vh + ${-displayY}px)`,
         width: displayW,
         height: displayH,
-        transform: `translateX(-50%) scaleX(${facingLeft ? -1 : 1})`,
+        transform: `translate3d(-50%, 0, 0) scaleX(${facingLeft ? -1 : 1})`,
         pointerEvents: "none",
         zIndex: 35,
         willChange: "left, transform",
+        backfaceVisibility: "hidden",
         filter: "drop-shadow(0 14px 18px rgba(0,0,0,0.55))",
       }}
     >
@@ -141,6 +142,8 @@ export function GlobalHero() {
           backgroundPosition: `-${frameIdx * displayW}px 0px`,
           backgroundRepeat: "no-repeat",
           imageRendering: "pixelated",
+          transform: "translate3d(0, 0, 0)",
+          backfaceVisibility: "hidden",
         }}
       />
       {/* Ground shadow */}
@@ -151,7 +154,7 @@ export function GlobalHero() {
           bottom: -12,
           width: displayW * 0.5,
           height: 10,
-          transform: "translateX(-50%)",
+          transform: "translate3d(-50%, 0, 0)",
           background: "radial-gradient(ellipse, rgba(0,0,0,0.6), transparent 70%)",
           borderRadius: "50%",
         }}

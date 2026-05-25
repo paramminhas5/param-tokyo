@@ -108,10 +108,27 @@ function install() {
   };
 
   let raf = 0;
+  let lastScrollTime = 0;
+  const THROTTLE_MS = 16; // 60fps max
+  
   const onScroll = () => {
     if (raf) return;
-    raf = requestAnimationFrame(() => { raf = 0; recompute(); });
+    const now = performance.now();
+    const timeSinceLastScroll = now - lastScrollTime;
+    
+    // Throttle to 16ms (60fps) for smoother performance
+    if (timeSinceLastScroll < THROTTLE_MS) {
+      raf = requestAnimationFrame(() => { 
+        raf = 0; 
+        lastScrollTime = performance.now();
+        recompute(); 
+      });
+    } else {
+      lastScrollTime = now;
+      raf = requestAnimationFrame(() => { raf = 0; recompute(); });
+    }
   };
+  
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll, { passive: true });
 
