@@ -37,3 +37,6 @@ next-env.d.ts
 # Build artifacts
 dist
 *.tsbuildinfo
+
+# FAL art-pipeline staging (composed into hero-pixel.png by scripts/generate-art.mjs)
+public/game/hero/_hero-*.png

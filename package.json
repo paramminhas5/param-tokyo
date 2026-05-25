@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "art:gen": "node --env-file=.env.local scripts/generate-art.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -70,6 +71,7 @@
     "globals": "^15.15.0",
     "postcss": "^8.4.49",
     "prettier": "^3.7.3",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1"
