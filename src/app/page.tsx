@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { HERO } from "@/content/resume";
-import { Journey } from "@/components/Journey";
+import { GameExperience } from "@/components/GameExperience";
 
 export const metadata: Metadata = {
   title: "Param Minhas — Interactive Resume",
@@ -13,10 +13,11 @@ export const metadata: Metadata = {
 };
 
 /**
- * The entire experience lives on one page.
- * No routing between /, /play, /cv — it's one continuous world.
- * /cv and /play/legacy remain as separate routes.
+ * Home — the full scroll-driven experience.
+ * One continuous vertical scroll journey.
+ * /cv = printable CV
+ * /play/legacy = Easter egg (original game)
  */
 export default function HomePage() {
-  return <Journey />;
+  return <GameExperience />;
 }
