@@ -79,6 +79,7 @@ export function GlobalHud() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Arrow / Page keys — step through chapters
       if (e.key === "ArrowDown" || e.key === "PageDown") {
         e.preventDefault();
         const next = Math.min(currentWorldIndex + 1, CHAPTERS.length - 1);
@@ -87,6 +88,22 @@ export function GlobalHud() {
         e.preventDefault();
         const prev = Math.max(currentWorldIndex - 1, 0);
         scrollToChapter(CHAPTERS[prev].id);
+      }
+      // Home / End — jump to intro or outro
+      else if (e.key === "Home") {
+        e.preventDefault();
+        document.getElementById("intro")?.scrollIntoView({ behavior: "smooth" });
+      } else if (e.key === "End") {
+        e.preventDefault();
+        document.getElementById("outro")?.scrollIntoView({ behavior: "smooth" });
+      }
+      // 1–9 — jump directly to chapter by number
+      else if (/^[1-9]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const idx = parseInt(e.key) - 1;
+        if (idx < CHAPTERS.length) {
+          e.preventDefault();
+          scrollToChapter(CHAPTERS[idx].id);
+        }
       }
     };
     window.addEventListener("keydown", handler);

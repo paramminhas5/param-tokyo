@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { HERO, CHAPTERS, COMPANIES } from "@/content/resume";
 import { WORLDS } from "@/game/journey";
@@ -9,68 +9,55 @@ import { WORLDS } from "@/game/journey";
  * Outro — the earned finale.
  *
  * Sections:
- * 1. Closing heading + bio
- * 2. Skills assembled one-by-one on scroll-enter (IntersectionObserver)
- * 3. Stats with count-up animation
- * 4. Skill dependency graph (SVG — shows builtOn connections)
- * 5. Company ticker marquee
- * 6. CTAs + social links
+ * 1. Heading + bio
+ * 2. Skills collected (staggered reveal)
+ * 3. Stats (count-up)
+ * 4. Skill dependency graph (bigger labels, readable)
+ * 5. WHAT'S BEING BUILT NOW — Iterate + CCD cards
+ * 6. Company ticker
+ * 7. CTAs + social
  */
 export function Outro() {
-  const sectionRef                        = useRef<HTMLDivElement>(null);
-  const [visible, setVisible]             = useState(false);
-  const [skillsRevealed, setSkillsRevealed] = useState<boolean[]>(
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [visible,          setVisible]          = useState(false);
+  const [skillsRevealed,   setSkillsRevealed]   = useState<boolean[]>(
     new Array(CHAPTERS.length).fill(false)
   );
-  const [countersStarted, setCountersStarted] = useState(false);
+  const [countersStarted,  setCountersStarted]  = useState(false);
 
-  // Trigger on enter
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.15 }
-    );
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setVisible(true); obs.disconnect(); }
+    }, { threshold: 0.12 });
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
-  // Stagger skill reveals after section becomes visible
   useEffect(() => {
     if (!visible) return;
     CHAPTERS.forEach((_, i) => {
       setTimeout(() => {
-        setSkillsRevealed((prev) => {
-          const next = [...prev];
-          next[i] = true;
-          return next;
-        });
-      }, 200 + i * 140);
+        setSkillsRevealed((prev) => { const n = [...prev]; n[i] = true; return n; });
+      }, 200 + i * 120);
     });
-    setTimeout(() => setCountersStarted(true), 800);
+    setTimeout(() => setCountersStarted(true), 600);
   }, [visible]);
 
+  // "What's next" chapters — the two active ones
+  const nowChapters = CHAPTERS.filter((ch) => ch.year === "Now");
+
   return (
-    <section
-      ref={sectionRef}
-      id="outro"
-      style={{
-        position: "relative",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        background: "linear-gradient(160deg, #0a0a1e 0%, #050310 100%)",
-        padding: "80px clamp(24px, 8vw, 80px) 80px",
-        overflow: "hidden",
-      }}
-    >
+    <section ref={sectionRef} id="outro" style={{
+      position: "relative",
+      minHeight: "100vh",
+      display: "flex", flexDirection: "column", alignItems: "center",
+      background: "linear-gradient(160deg, #0a0a1e 0%, #050310 100%)",
+      padding: "80px clamp(24px, 8vw, 80px) 80px",
+      overflow: "hidden",
+    }}>
+
       {/* Ambient glows */}
       <div aria-hidden style={{
         position: "absolute", inset: 0,
@@ -86,11 +73,10 @@ export function Outro() {
         width: 1, height: 60,
         background: "linear-gradient(180deg, rgba(251,191,36,0.5), transparent)",
         marginBottom: 40,
-        opacity: visible ? 1 : 0,
-        transition: "opacity 0.8s ease",
+        opacity: visible ? 1 : 0, transition: "opacity 0.8s ease",
       }} />
 
-      {/* ── HEADING ── */}
+      {/* Heading */}
       <h2 style={{
         fontFamily: "var(--font-display)",
         fontSize: "clamp(28px, 5vw, 52px)",
@@ -108,14 +94,13 @@ export function Outro() {
         color: "rgba(240,236,228,0.45)",
         textAlign: "center", maxWidth: 520,
         lineHeight: 1.65, marginBottom: 56,
-        opacity: visible ? 1 : 0,
-        transition: "opacity 0.8s ease 0.3s",
+        opacity: visible ? 1 : 0, transition: "opacity 0.8s ease 0.3s",
       }}>
         {HERO.bio}
       </p>
 
-      {/* ── SKILLS COLLECTED — staggered reveal ── */}
-      <div style={{ marginBottom: 56, textAlign: "center", width: "100%", maxWidth: 680 }}>
+      {/* Skills collected */}
+      <div style={{ marginBottom: 56, textAlign: "center", width: "100%", maxWidth: 700 }}>
         <div style={{
           fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.3em",
           textTransform: "uppercase", color: "rgba(240,236,228,0.25)", marginBottom: 20,
@@ -130,8 +115,7 @@ export function Outro() {
               <span key={ch.id} style={{
                 fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.08em",
                 color: accent, padding: "7px 16px",
-                background: `${accent}0e`,
-                border: `1px solid ${accent}33`,
+                background: `${accent}0e`, border: `1px solid ${accent}33`,
                 boxShadow: skillsRevealed[i] ? `0 0 18px ${accent}22` : "none",
                 opacity: skillsRevealed[i] ? 1 : 0,
                 transform: skillsRevealed[i] ? "scale(1) translateY(0)" : "scale(0.6) translateY(10px)",
@@ -144,19 +128,19 @@ export function Outro() {
         </div>
       </div>
 
-      {/* ── STATS — count-up ── */}
+      {/* Stats */}
       <div style={{
         display: "flex", flexWrap: "wrap",
         gap: "clamp(20px, 4vw, 48px)",
         justifyContent: "center", marginBottom: 64,
       }}>
         {HERO.stats.map((s, i) => (
-          <StatItem key={s.label} stat={s} started={countersStarted} delay={i * 120} />
+          <StatItem key={s.label} stat={s} started={countersStarted} delay={i * 100} />
         ))}
       </div>
 
-      {/* ── SKILL DEPENDENCY GRAPH ── */}
-      <div style={{ marginBottom: 60, width: "100%", maxWidth: 760 }}>
+      {/* Skill dependency graph */}
+      <div style={{ marginBottom: 64, width: "100%", maxWidth: 800 }}>
         <div style={{
           fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.3em",
           textTransform: "uppercase", color: "rgba(240,236,228,0.25)", marginBottom: 20,
@@ -168,38 +152,123 @@ export function Outro() {
         <SkillGraph visible={visible} />
       </div>
 
-      {/* ── COMPANY TICKER ── */}
+      {/* ── WHAT'S BEING BUILT NOW ─────────────────────────────────────── */}
+      <div style={{
+        width: "100%", maxWidth: 760, marginBottom: 64,
+        opacity: visible ? 1 : 0, transition: "opacity 0.8s ease 0.7s",
+      }}>
+        <div style={{
+          fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.3em",
+          textTransform: "uppercase", color: "rgba(240,236,228,0.25)",
+          marginBottom: 24, textAlign: "center",
+        }}>
+          What&apos;s being built now
+        </div>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: nowChapters.length > 1 ? "repeat(auto-fit, minmax(280px, 1fr))" : "1fr",
+          gap: 16,
+        }}>
+          {nowChapters.map((ch) => {
+            const accent = WORLDS[ch.id]?.accent ?? ch.skill.color;
+            const poster = WORLDS[ch.id]?.poster;
+            return (
+              <div key={ch.id} style={{
+                position: "relative",
+                background: "rgba(5,3,16,0.7)",
+                backdropFilter: "blur(16px)",
+                WebkitBackdropFilter: "blur(16px)",
+                border: `1px solid ${accent}33`,
+                borderTop: `2px solid ${accent}`,
+                overflow: "hidden",
+                display: "flex", gap: 0,
+              }}>
+                {/* Poster image — right side */}
+                {poster && (
+                  <div style={{
+                    width: 100, flexShrink: 0,
+                    backgroundImage: `url(${poster})`,
+                    backgroundSize: "cover", backgroundPosition: "center top",
+                    opacity: 0.55,
+                    minHeight: 160,
+                  }} />
+                )}
+                {/* Content */}
+                <div style={{ padding: "20px 20px 20px", flex: 1 }}>
+                  <div style={{
+                    fontFamily: "var(--font-mono)", fontSize: 8,
+                    letterSpacing: "0.28em", textTransform: "uppercase",
+                    color: accent, marginBottom: 6,
+                  }}>
+                    Active · {ch.role}
+                  </div>
+                  <div style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: "clamp(18px, 2.5vw, 24px)",
+                    fontWeight: 700, color: "#f0ece4", lineHeight: 1.1,
+                    marginBottom: 8,
+                    textShadow: `0 0 30px ${accent}33`,
+                  }}>
+                    {ch.org}
+                  </div>
+                  <p style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: 13, color: "rgba(240,236,228,0.6)",
+                    lineHeight: 1.6, margin: "0 0 14px",
+                  }}>
+                    {ch.cliff}
+                  </p>
+                  <div style={{
+                    fontFamily: "var(--font-mono)", fontSize: 9,
+                    color: accent, letterSpacing: "0.05em",
+                    display: "flex", alignItems: "center", gap: 6,
+                  }}>
+                    <div style={{
+                      width: 6, height: 6, borderRadius: "50%",
+                      background: accent, boxShadow: `0 0 8px ${accent}`,
+                      animation: "now-pulse 2s ease-in-out infinite",
+                    }} />
+                    Building now
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Company ticker */}
       <div style={{ marginBottom: 56, width: "100vw", overflow: "hidden" }}>
         <div style={{
           fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.3em",
           textTransform: "uppercase", color: "rgba(240,236,228,0.2)",
           textAlign: "center", marginBottom: 16,
         }}>
-          Brands & partners worked with
+          Brands &amp; partners worked with
         </div>
         <CompanyTicker />
       </div>
 
-      {/* ── CTAs ── */}
+      {/* CTAs */}
       <div style={{
         display: "flex", gap: 12, flexWrap: "wrap",
         justifyContent: "center", marginBottom: 32,
-        opacity: visible ? 1 : 0,
-        transition: "opacity 0.8s ease 0.8s",
+        opacity: visible ? 1 : 0, transition: "opacity 0.8s ease 0.9s",
       }}>
         <a href={`mailto:${HERO.email}`} style={{
           fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.18em",
-          textTransform: "uppercase", padding: "14px 28px",
+          textTransform: "uppercase", padding: "14px 32px",
           color: "#050310", background: "#f0ece4", textDecoration: "none",
-          transition: "background 200ms",
+          transition: "opacity 200ms",
         }}>
           Get in touch
         </a>
         <Link href="/cv" style={{
           fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.18em",
-          textTransform: "uppercase", padding: "14px 28px",
+          textTransform: "uppercase", padding: "13px 31px",
           color: "#f0ece4", background: "transparent",
-          border: "1px solid rgba(240,236,228,0.22)", textDecoration: "none",
+          border: "2px solid rgba(240,236,228,0.3)", textDecoration: "none",
+          transition: "border-color 200ms",
         }}>
           View full CV
         </Link>
@@ -210,55 +279,56 @@ export function Outro() {
         {Object.entries(HERO.links).map(([key, url]) => (
           <a key={key} href={url} target="_blank" rel="noopener noreferrer" style={{
             fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.12em",
-            textTransform: "capitalize", color: "rgba(240,236,228,0.3)", textDecoration: "none",
-            transition: "color 200ms",
+            textTransform: "capitalize", color: "rgba(240,236,228,0.3)",
+            textDecoration: "none", transition: "color 200ms",
           }}>
             {key}
           </a>
         ))}
       </div>
 
-      {/* Footer note */}
+      {/* Footer */}
       <div style={{
         fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.18em",
         color: "rgba(240,236,228,0.14)", textAlign: "center",
       }}>
         Param Tokyo · Scroll-driven narrative · {new Date().getFullYear()}
       </div>
+
+      <style>{`
+        @keyframes now-pulse {
+          0%, 100% { box-shadow: 0 0 6px currentColor; }
+          50%       { box-shadow: 0 0 16px currentColor; }
+        }
+      `}</style>
     </section>
   );
 }
 
-// ── Stat item with count-up animation ────────────────────────────────────────
+// ── Stat count-up ─────────────────────────────────────────────────────────────
 function StatItem({ stat, started, delay }: {
   stat: { label: string; value: string };
   started: boolean;
   delay: number;
 }) {
-  const [display, setDisplay] = useState("0");
+  const [display, setDisplay] = useState("—");
 
   useEffect(() => {
     if (!started) return;
     const timer = setTimeout(() => {
-      // Extract numeric prefix, animate to it
       const match = stat.value.match(/^([₹$])?([\d.]+)([A-Za-z+%]*)/);
       if (!match) { setDisplay(stat.value); return; }
-      const prefix  = match[1] ?? "";
-      const target  = parseFloat(match[2]);
-      const suffix  = match[3] ?? "";
+      const prefix = match[1] ?? "", suffix = match[3] ?? "";
+      const target = parseFloat(match[2]);
       const isFloat = match[2].includes(".");
-      const steps   = 40;
-      let step      = 0;
+      let step = 0;
+      const steps = 40;
       const iv = setInterval(() => {
         step++;
         const val = (target * step) / steps;
-        setDisplay(
-          prefix +
-          (isFloat ? val.toFixed(1) : Math.round(val).toString()) +
-          suffix
-        );
+        setDisplay(prefix + (isFloat ? val.toFixed(1) : Math.round(val).toString()) + suffix);
         if (step >= steps) clearInterval(iv);
-      }, 30);
+      }, 28);
       return () => clearInterval(iv);
     }, delay);
     return () => clearTimeout(timer);
@@ -270,9 +340,8 @@ function StatItem({ stat, started, delay }: {
         fontFamily: "var(--font-display)",
         fontSize: "clamp(22px, 4vw, 38px)",
         fontWeight: 700, color: "#f0ece4", lineHeight: 1, marginBottom: 5,
-        transition: "color 200ms",
       }}>
-        {display || stat.value}
+        {display}
       </div>
       <div style={{
         fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.18em",
@@ -284,85 +353,61 @@ function StatItem({ stat, started, delay }: {
   );
 }
 
-// ── Skill dependency graph (SVG) ─────────────────────────────────────────────
+// ── Skill dependency graph — bigger labels ─────────────────────────────────────
 function SkillGraph({ visible }: { visible: boolean }) {
-  const W = 760, H = 240;
-  // Position each skill node on a timeline row
-  const nodes = CHAPTERS.map((ch, i) => {
-    const x = 40 + (i / (CHAPTERS.length - 1)) * (W - 80);
-    const y = H / 2;
-    return { id: ch.skill.name, x, y, color: ch.skill.color, label: ch.skill.name, org: ch.org, i };
-  });
-
+  const W = 800, H = 280;
+  const nodes = CHAPTERS.map((ch, i) => ({
+    id: ch.skill.name, org: ch.org,
+    x: 44 + (i / (CHAPTERS.length - 1)) * (W - 88),
+    y: H / 2,
+    color: ch.skill.color, label: ch.skill.name, i,
+  }));
   const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
-
-  // Build edges from builtOn
   const edges: { x1: number; y1: number; x2: number; y2: number; color: string }[] = [];
   CHAPTERS.forEach((ch) => {
     const target = nodeMap[ch.skill.name];
     if (!target) return;
     ch.builtOn.forEach((dep) => {
       const src = nodeMap[dep];
-      if (!src) return;
-      edges.push({ x1: src.x, y1: src.y, x2: target.x, y2: target.y, color: target.color });
+      if (src) edges.push({ x1: src.x, y1: src.y, x2: target.x, y2: target.y, color: target.color });
     });
   });
 
   return (
-    <div style={{
-      width: "100%",
-      overflowX: "auto",
-      opacity: visible ? 1 : 0,
-      transition: "opacity 1s ease 0.8s",
-    }}>
+    <div style={{ width: "100%", overflowX: "auto", opacity: visible ? 1 : 0, transition: "opacity 1s ease 0.8s" }}>
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        style={{ width: "100%", minWidth: 480, height: "auto", display: "block" }}
-        aria-label="Skill dependency tree showing how each skill built on previous ones"
+        style={{ width: "100%", minWidth: 520, height: "auto", display: "block" }}
+        aria-label="Skill dependency tree"
       >
-        {/* Edges */}
         {edges.map((e, i) => (
-          <line
-            key={i}
+          <line key={i}
             x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
-            stroke={e.color}
-            strokeOpacity={0.18}
-            strokeWidth={1.5}
-            strokeDasharray="3 4"
+            stroke={e.color} strokeOpacity={0.2} strokeWidth={1.5} strokeDasharray="4 5"
           />
         ))}
-
-        {/* Timeline backbone */}
-        <line x1={40} y1={H / 2} x2={W - 40} y2={H / 2}
-          stroke="rgba(240,236,228,0.08)" strokeWidth={1} />
-
-        {/* Nodes */}
+        <line x1={44} y1={H / 2} x2={W - 44} y2={H / 2}
+          stroke="rgba(240,236,228,0.07)" strokeWidth={1} />
         {nodes.map((n) => (
           <g key={n.id}>
-            {/* Glow circle */}
-            <circle cx={n.x} cy={n.y} r={18} fill={n.color} fillOpacity={0.07} />
-            {/* Main dot */}
-            <circle cx={n.x} cy={n.y} r={8} fill={n.color} fillOpacity={0.9} />
-            <circle cx={n.x} cy={n.y} r={8} fill="none" stroke={n.color} strokeOpacity={0.5} strokeWidth={1.5} />
-            {/* Index */}
+            <circle cx={n.x} cy={n.y} r={20} fill={n.color} fillOpacity={0.07} />
+            <circle cx={n.x} cy={n.y} r={9} fill={n.color} fillOpacity={0.9} />
+            <circle cx={n.x} cy={n.y} r={9} fill="none" stroke={n.color} strokeOpacity={0.5} strokeWidth={1.5} />
             <text x={n.x} y={n.y + 1} textAnchor="middle" dominantBaseline="middle"
-              fill="#050310" fontSize={8} fontWeight={700}
-              style={{ fontFamily: "monospace" }}>
+              fill="#050310" fontSize={9} fontWeight={700} style={{ fontFamily: "monospace" }}>
               {n.i + 1}
             </text>
-            {/* Skill name — alternating above/below for readability */}
+            {/* Skill name — bigger, alternating */}
             <text
-              x={n.x} y={n.i % 2 === 0 ? n.y - 22 : n.y + 28}
-              textAnchor="middle"
-              fill={n.color} fontSize={8.5} fillOpacity={0.85}
+              x={n.x} y={n.i % 2 === 0 ? n.y - 26 : n.y + 32}
+              textAnchor="middle" fill={n.color} fontSize={10} fillOpacity={0.9}
               style={{ fontFamily: "monospace" }}>
               {n.label}
             </text>
             {/* Org name */}
             <text
-              x={n.x} y={n.i % 2 === 0 ? n.y - 33 : n.y + 39}
-              textAnchor="middle"
-              fill="rgba(240,236,228,0.3)" fontSize={7}
+              x={n.x} y={n.i % 2 === 0 ? n.y - 40 : n.y + 46}
+              textAnchor="middle" fill="rgba(240,236,228,0.35)" fontSize={8.5}
               style={{ fontFamily: "monospace" }}>
               {n.org}
             </text>
@@ -373,9 +418,8 @@ function SkillGraph({ visible }: { visible: boolean }) {
   );
 }
 
-// ── Company ticker marquee ────────────────────────────────────────────────────
+// ── Company ticker ─────────────────────────────────────────────────────────────
 function CompanyTicker() {
-  // Double the list for seamless loop
   const doubled = [...COMPANIES, ...COMPANIES];
   return (
     <div style={{ position: "relative", overflow: "hidden" }}>
@@ -395,23 +439,14 @@ function CompanyTicker() {
           </span>
         ))}
       </div>
-      {/* Fade edges */}
       <div aria-hidden style={{
         position: "absolute", top: 0, left: 0, bottom: 0, width: 80,
-        background: "linear-gradient(90deg, #050310, transparent)",
-        pointerEvents: "none",
+        background: "linear-gradient(90deg, #050310, transparent)", pointerEvents: "none",
       }} />
       <div aria-hidden style={{
         position: "absolute", top: 0, right: 0, bottom: 0, width: 80,
-        background: "linear-gradient(270deg, #050310, transparent)",
-        pointerEvents: "none",
+        background: "linear-gradient(270deg, #050310, transparent)", pointerEvents: "none",
       }} />
-      <style>{`
-        @keyframes ticker-scroll {
-          from { transform: translateX(0); }
-          to   { transform: translateX(-50%); }
-        }
-      `}</style>
     </div>
   );
 }
