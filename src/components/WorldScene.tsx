@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Chapter } from "@/content/resume";
 import { WORLDS } from "@/game/journey";
-import { registerWorldEl, useProgress } from "@/game/progress";
+import { registerWorldEl, useProgress, BEATS_PER_WORLD } from "@/game/progress";
 import { playWorld } from "@/game/ambient";
 
 interface Props {
@@ -11,26 +11,26 @@ interface Props {
 }
 
 /**
- * WorldScene v4 — A real interactive experience, not a passive scroller.
+ * WorldScene v5 — Panel-based visual novel experience.
  *
- * Uses the beautiful full-color foreground illustrations (from dea16f5) 
- * and painted backgrounds (from 4e9983a). No more broken black silhouettes.
+ * Each world is a full-viewport scene with 4 "beats" that auto-reveal as you scroll:
+ *   Beat 0: Chapter title + year + role (cinematic entry)
+ *   Beat 1: Cliff note in glass panel
+ *   Beat 2: Full story paragraphs in glass panel
+ *   Beat 3: Outcomes grid + Skill Unlocked badge
  *
- * Architecture:
- * - Full-viewport scene with painted BG + illustrated FG
- * - Content auto-reveals in timed stages as you scroll through
- * - Parallax between BG and FG layers
- * - Narrative appears automatically — no clicking required
- * - Visual drama: entry flash, accent glow, floating particles
- * - 200vh height for proper scroll pacing
+ * Visual architecture:
+ *   - BG: `object-fit: contain` — shows full painting, letterboxed if needed
+ *   - FG: small accent (25% height, bottom-right) — not dominant
+ *   - All text in glass panels (backdrop-filter: blur) — always readable
+ *   - Parallax between BG (slow) and content (faster)
  */
 export function WorldScene({ chapter }: Props) {
   const world = WORLDS[chapter.id] ?? WORLDS.origin;
   const ref = useRef<HTMLElement | null>(null);
-  const { worldId, worldProgress, worldIndex } = useProgress();
+  const { worldId, worldProgress, worldIndex, beat, beatProgress } = useProgress();
   const isActive = worldId === chapter.id;
   const [hasEntered, setHasEntered] = useState(false);
-  const prevWorldRef = useRef<string | null>(null);
 
   useEffect(() => {
     registerWorldEl(chapter.id, ref.current);
@@ -44,42 +44,25 @@ export function WorldScene({ chapter }: Props) {
     }
   }, [isActive, chapter.id, hasEntered]);
 
-  // World entry flash
-  const [showFlash, setShowFlash] = useState(false);
-  useEffect(() => {
-    if (isActive && prevWorldRef.current !== chapter.id) {
-      setShowFlash(true);
-      const t = setTimeout(() => setShowFlash(false), 700);
-      prevWorldRef.current = chapter.id;
-      return () => clearTimeout(t);
-    }
-  }, [isActive, chapter.id]);
-
   const p = isActive ? worldProgress : worldIndex > chapter.index - 1 ? 1 : 0;
+  const currentBeat = isActive ? beat : (hasEntered ? BEATS_PER_WORLD - 1 : -1);
+  const currentBeatProgress = isActive ? beatProgress : (hasEntered ? 1 : 0);
 
   // Lazy mount
   const distance = Math.abs((chapter.index - 1) - Math.max(0, worldIndex));
   const isNear = distance <= 1;
 
-  // Parallax — BG drifts slow, FG drifts faster
-  const bgShift = p * -3;
-  const fgShift = p * -8;
+  // Subtle parallax on BG
+  const bgY = p * -4;
 
-  // Progressive content reveal — auto, no clicking:
-  // 0-10%: Title + year fly in
-  // 10-25%: Role + cliff note
-  // 25-45%: Full paragraphs appear one by one  
-  // 45-65%: Outcomes animate in staggered
-  // 65-80%: Skill earned with glow
-  // 80-100%: Fade out for transition
-
-  const phase1 = clamp01((p - 0) / 0.1);      // title
-  const phase2 = clamp01((p - 0.1) / 0.12);   // cliff
-  const phase3 = clamp01((p - 0.25) / 0.2);   // paragraphs
-  const phase4 = clamp01((p - 0.45) / 0.18);  // outcomes
-  const phase5 = clamp01((p - 0.65) / 0.1);   // skill badge
-  const fadeOut = p > 0.82 ? 1 - clamp01((p - 0.82) / 0.18) : 1;
-  const masterOpacity = isActive ? fadeOut : (hasEntered ? 0.15 : 0);
+  // Beat visibility helpers
+  const beatVisible = (b: number) => {
+    if (!isActive && !hasEntered) return 0;
+    if (!isActive && hasEntered) return b <= 2 ? 0.3 : 0; // faded memory
+    if (currentBeat > b) return 1; // already passed
+    if (currentBeat === b) return currentBeatProgress; // currently revealing
+    return 0; // not yet
+  };
 
   return (
     <section
@@ -88,378 +71,418 @@ export function WorldScene({ chapter }: Props) {
       style={{
         position: "relative",
         width: "100%",
-        minHeight: "200vh",
+        minHeight: "280vh", // tall enough for 4 beats
         overflow: "hidden",
         background: world.ink,
       }}
     >
-      {/* World entry flash */}
-      {showFlash && (
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: `radial-gradient(circle at 50% 50%, ${world.accent}66, transparent 70%)`,
-            animation: "world-entry-flash 700ms ease-out forwards",
-            zIndex: 100,
-            pointerEvents: "none",
-          }}
-        />
-      )}
-
       {!isNear ? (
         <div
           aria-hidden
           style={{
             position: "absolute",
             inset: 0,
-            background: `linear-gradient(180deg, ${world.ink} 0%, ${world.accent}08 50%, ${world.ink} 100%)`,
+            background: world.ink,
           }}
         />
       ) : (
         <>
-          {/* BACKGROUND — full painted scene */}
+          {/* === BACKGROUND — full painting, properly fit === */}
           <div
             aria-hidden
             style={{
-              position: "absolute",
-              inset: "-5%",
-              backgroundImage: `url(${world.bg})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              transform: `translate3d(${bgShift}%, 0, 0) scale(1.1)`,
-              willChange: "transform",
-              filter: "brightness(0.7) saturate(1.1)",
-            }}
-          />
-
-          {/* Top gradient — helps text readability */}
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: `linear-gradient(180deg, ${world.ink}cc 0%, ${world.ink}44 15%, transparent 40%, ${world.ink}66 75%, ${world.ink}ee 100%)`,
-              zIndex: 2,
-              pointerEvents: "none",
-            }}
-          />
-
-          {/* FOREGROUND — beautiful illustrated layer */}
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              left: "-10%",
-              right: "-10%",
-              bottom: 0,
-              height: "55%",
-              transform: `translate3d(${fgShift}%, 0, 0)`,
-              willChange: "transform",
-              zIndex: 3,
+              position: "sticky",
+              top: 0,
+              width: "100%",
+              height: "100vh",
+              overflow: "hidden",
             }}
           >
-            <img
-              src={world.fg}
-              alt=""
-              loading="lazy"
-              decoding="async"
+            {/* BG image — contain so you see the full scene */}
+            <div
               style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                objectPosition: "center bottom",
-                filter: "drop-shadow(0 -20px 40px rgba(0,0,0,0.5))",
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transform: `translateY(${bgY}%)`,
+                transition: "transform 100ms linear",
+              }}
+            >
+              <img
+                src={world.bg}
+                alt=""
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  objectPosition: "center",
+                  filter: "brightness(0.55) saturate(1.15)",
+                }}
+              />
+            </div>
+
+            {/* Foreground accent — small, bottom-right, atmospheric */}
+            <div
+              style={{
+                position: "absolute",
+                bottom: 0,
+                right: 0,
+                width: "clamp(200px, 30%, 400px)",
+                height: "35%",
+                opacity: isActive ? 0.5 : 0.2,
+                transition: "opacity 1s ease",
+                pointerEvents: "none",
+              }}
+            >
+              <img
+                src={world.fg}
+                alt=""
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  objectPosition: "bottom right",
+                  filter: "drop-shadow(0 -8px 24px rgba(0,0,0,0.6))",
+                }}
+              />
+            </div>
+
+            {/* Vignette overlay */}
+            <div
+              aria-hidden
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: `
+                  radial-gradient(ellipse 80% 70% at 50% 50%, transparent 30%, rgba(5,3,16,0.7) 100%),
+                  linear-gradient(180deg, ${world.ink}88 0%, transparent 20%, transparent 70%, ${world.ink}cc 100%)
+                `,
+                pointerEvents: "none",
               }}
             />
-          </div>
 
-          {/* Ground accent glow */}
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: "10%",
-              height: "30%",
-              background: `radial-gradient(ellipse 100% 80% at 50% 100%, ${world.accent}22 0%, transparent 60%)`,
-              zIndex: 4,
-              pointerEvents: "none",
-            }}
-          />
-
-          {/* Floating particles */}
-          <Particles accent={world.accent} active={isActive} />
-
-          {/* === NARRATIVE CONTENT — auto-reveals as you scroll === */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "flex-start",
-              alignItems: "center",
-              paddingTop: "12vh",
-              padding: "12vh 6vw 0",
-              zIndex: 20,
-              opacity: masterOpacity,
-              transition: "opacity 300ms ease",
-              pointerEvents: "none",
-            }}
-          >
-            {/* PHASE 1: Chapter + Title */}
-            <div
-              style={{
-                opacity: phase1,
-                transform: `translateY(${(1 - phase1) * 30}px)`,
-                transition: "transform 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-                textAlign: "center",
-                marginBottom: 16,
-              }}
-            >
-              <div style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "clamp(9px, 1vw, 11px)",
-                letterSpacing: "0.5em",
-                textTransform: "uppercase",
-                color: world.accent,
-                marginBottom: 14,
-              }}>
-                Chapter {String(chapter.index).padStart(2, "0")} — {chapter.year}
-              </div>
-              <h2 style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "clamp(40px, 8vw, 80px)",
-                fontWeight: 700,
-                color: "#f0ece4",
-                lineHeight: 0.95,
-                textShadow: `0 4px 40px rgba(0,0,0,0.95), 0 0 80px ${world.accent}20`,
-              }}>
-                {chapter.org}
-              </h2>
-              <div style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "clamp(10px, 1.2vw, 13px)",
-                letterSpacing: "0.2em",
-                color: "rgba(240, 236, 228, 0.55)",
-                textTransform: "uppercase",
-                marginTop: 8,
-              }}>
-                {chapter.role}
-              </div>
-            </div>
-
-            {/* PHASE 2: Cliff note */}
-            <div
-              style={{
-                opacity: phase2,
-                transform: `translateY(${(1 - phase2) * 20}px)`,
-                transition: "transform 500ms ease",
-                textAlign: "center",
-                maxWidth: 580,
-                marginBottom: 28,
-              }}
-            >
-              <div style={{
-                width: 40,
-                height: 2,
-                background: world.accent,
-                margin: "0 auto 20px",
-                opacity: 0.6,
-              }} />
-              <p style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "clamp(16px, 2.5vw, 26px)",
-                color: "rgba(240, 236, 228, 0.9)",
-                lineHeight: 1.55,
-                fontWeight: 400,
-                textShadow: "0 3px 20px rgba(0,0,0,0.9)",
-              }}>
-                {chapter.cliff}
-              </p>
-            </div>
-
-            {/* PHASE 3: Full paragraphs — auto reveal */}
-            <div
-              style={{
-                maxWidth: 560,
-                marginBottom: 24,
-                textAlign: "center",
-              }}
-            >
-              {chapter.paragraphs.map((para, i) => {
-                const paraProgress = clamp01((phase3 * chapter.paragraphs.length) - i);
-                return (
-                  <p
-                    key={i}
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: "clamp(13px, 1.6vw, 16px)",
-                      color: "rgba(240, 236, 228, 0.7)",
-                      lineHeight: 1.7,
-                      marginBottom: 14,
-                      opacity: paraProgress,
-                      transform: `translateY(${(1 - paraProgress) * 12}px)`,
-                      transition: "opacity 400ms ease, transform 400ms ease",
-                      textShadow: "0 2px 12px rgba(0,0,0,0.8)",
-                    }}
-                  >
-                    {para}
-                  </p>
-                );
-              })}
-            </div>
-
-            {/* PHASE 4: Outcomes — staggered fly-in */}
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                gap: "8px 10px",
-                marginBottom: 28,
-                maxWidth: 640,
-              }}
-            >
-              {chapter.outcomes.map((o, i) => {
-                const itemP = clamp01((phase4 * chapter.outcomes.length) - i);
-                return (
-                  <span
-                    key={i}
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "clamp(9px, 1vw, 11px)",
-                      letterSpacing: "0.08em",
-                      color: world.accent,
-                      padding: "6px 14px",
-                      border: `1px solid ${world.accent}55`,
-                      background: `${world.accent}12`,
-                      textTransform: "uppercase",
-                      opacity: itemP,
-                      transform: `translateY(${(1 - itemP) * 16}px) scale(${0.85 + itemP * 0.15})`,
-                      transition: "all 350ms cubic-bezier(0.34, 1.56, 0.64, 1)",
-                      boxShadow: itemP > 0.8 ? `0 0 12px ${world.accent}22` : "none",
-                    }}
-                  >
-                    {o}
-                  </span>
-                );
-              })}
-            </div>
-
-            {/* PHASE 5: Skill Earned badge */}
-            <div
-              style={{
-                opacity: phase5,
-                transform: `scale(${0.7 + phase5 * 0.3}) translateY(${(1 - phase5) * 14}px)`,
-                transition: "all 500ms cubic-bezier(0.34, 1.56, 0.64, 1)",
-                textAlign: "center",
-              }}
-            >
-              <div style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "12px 24px",
-                background: `${chapter.skill.color}18`,
-                border: `1px solid ${chapter.skill.color}66`,
-                boxShadow: phase5 > 0.8 ? `0 0 30px ${chapter.skill.color}33, 0 0 60px ${chapter.skill.color}11` : "none",
-                transition: "box-shadow 500ms ease",
-              }}>
-                <div style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  background: chapter.skill.color,
-                  boxShadow: `0 0 10px ${chapter.skill.color}`,
-                  animation: phase5 > 0.9 ? "skill-pulse 2s ease-in-out infinite" : "none",
-                }} />
-                <div>
-                  <div style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 10,
-                    letterSpacing: "0.18em",
-                    textTransform: "uppercase",
-                    color: chapter.skill.color,
-                  }}>
-                    Skill Unlocked
-                  </div>
-                  <div style={{
-                    fontFamily: "var(--font-display)",
-                    fontSize: 15,
-                    fontWeight: 600,
-                    color: "#f0ece4",
-                    marginTop: 2,
-                  }}>
-                    {chapter.skill.name}
-                  </div>
-                </div>
-              </div>
-              {chapter.builtOn.length > 0 && (
-                <div style={{
-                  marginTop: 8,
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 9,
-                  letterSpacing: "0.12em",
-                  color: "rgba(240, 236, 228, 0.35)",
-                }}>
-                  Built on: {chapter.builtOn.join(" → ")}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Scroll progress */}
-          {isActive && (
+            {/* Accent atmosphere glow */}
             <div
               aria-hidden
               style={{
                 position: "absolute",
                 bottom: 0,
                 left: 0,
-                height: 3,
-                width: `${p * 100}%`,
-                background: `linear-gradient(90deg, transparent, ${world.accent})`,
-                boxShadow: `0 0 16px ${world.accent}88`,
-                zIndex: 30,
+                right: 0,
+                height: "25%",
+                background: `radial-gradient(ellipse 100% 100% at 50% 100%, ${world.accent}15 0%, transparent 70%)`,
+                pointerEvents: "none",
               }}
             />
-          )}
+
+            {/* Floating particles */}
+            <Particles accent={world.accent} active={isActive} />
+
+            {/* === CONTENT PANELS — glass cards, always readable === */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                padding: "clamp(16px, 4vw, 40px)",
+                zIndex: 10,
+              }}
+            >
+              {/* BEAT 0: Title */}
+              <div
+                style={{
+                  opacity: beatVisible(0),
+                  transform: `translateY(${(1 - beatVisible(0)) * 24}px)`,
+                  transition: "opacity 600ms ease, transform 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                  textAlign: "center",
+                  marginBottom: 20,
+                }}
+              >
+                <div style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "clamp(9px, 1vw, 11px)",
+                  letterSpacing: "0.5em",
+                  textTransform: "uppercase",
+                  color: world.accent,
+                  marginBottom: 14,
+                }}>
+                  Chapter {String(chapter.index).padStart(2, "0")} — {chapter.year}
+                </div>
+                <h2 style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "clamp(36px, 8vw, 80px)",
+                  fontWeight: 700,
+                  color: "#f0ece4",
+                  lineHeight: 0.95,
+                  textShadow: `0 4px 40px rgba(0,0,0,0.95)`,
+                }}>
+                  {chapter.org}
+                </h2>
+                <div style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "clamp(10px, 1.2vw, 13px)",
+                  letterSpacing: "0.2em",
+                  color: "rgba(240, 236, 228, 0.55)",
+                  textTransform: "uppercase",
+                  marginTop: 10,
+                }}>
+                  {chapter.role}
+                </div>
+              </div>
+
+              {/* BEAT 1: Cliff note — glass panel */}
+              <GlassPanel
+                visible={beatVisible(1)}
+                accent={world.accent}
+                maxWidth={560}
+              >
+                <p style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "clamp(16px, 2.4vw, 24px)",
+                  color: "rgba(240, 236, 228, 0.92)",
+                  lineHeight: 1.55,
+                  textAlign: "center",
+                  margin: 0,
+                }}>
+                  {chapter.cliff}
+                </p>
+              </GlassPanel>
+
+              {/* BEAT 2: Full story — glass panel */}
+              <GlassPanel
+                visible={beatVisible(2)}
+                accent={world.accent}
+                maxWidth={580}
+              >
+                {chapter.paragraphs.map((para, i) => (
+                  <p
+                    key={i}
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: "clamp(13px, 1.5vw, 15px)",
+                      color: "rgba(240, 236, 228, 0.78)",
+                      lineHeight: 1.7,
+                      marginBottom: i < chapter.paragraphs.length - 1 ? 14 : 0,
+                      margin: 0,
+                      marginTop: i > 0 ? 14 : 0,
+                    }}
+                  >
+                    {para}
+                  </p>
+                ))}
+              </GlassPanel>
+
+              {/* BEAT 3: Outcomes + Skill */}
+              <div
+                style={{
+                  opacity: beatVisible(3),
+                  transform: `translateY(${(1 - beatVisible(3)) * 16}px)`,
+                  transition: "opacity 500ms ease, transform 500ms ease",
+                  textAlign: "center",
+                  maxWidth: 640,
+                }}
+              >
+                {/* Outcomes grid */}
+                <div style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  gap: "8px 10px",
+                  marginBottom: 24,
+                }}>
+                  {chapter.outcomes.map((o, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "clamp(9px, 1vw, 11px)",
+                        letterSpacing: "0.08em",
+                        color: world.accent,
+                        padding: "6px 14px",
+                        background: `rgba(0,0,0,0.5)`,
+                        backdropFilter: "blur(8px)",
+                        border: `1px solid ${world.accent}44`,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {o}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Skill Earned */}
+                <div style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "14px 28px",
+                  background: "rgba(0,0,0,0.6)",
+                  backdropFilter: "blur(12px)",
+                  border: `1px solid ${chapter.skill.color}55`,
+                  boxShadow: `0 0 40px ${chapter.skill.color}22`,
+                }}>
+                  <div style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: "50%",
+                    background: chapter.skill.color,
+                    boxShadow: `0 0 12px ${chapter.skill.color}`,
+                    animation: beatVisible(3) > 0.9 ? "skill-glow 2s ease-in-out infinite" : "none",
+                  }} />
+                  <div style={{ textAlign: "left" }}>
+                    <div style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 9,
+                      letterSpacing: "0.2em",
+                      textTransform: "uppercase",
+                      color: chapter.skill.color,
+                    }}>
+                      Skill Unlocked
+                    </div>
+                    <div style={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: "#f0ece4",
+                      marginTop: 2,
+                    }}>
+                      {chapter.skill.name}
+                    </div>
+                  </div>
+                </div>
+
+                {chapter.builtOn.length > 0 && (
+                  <div style={{
+                    marginTop: 10,
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 9,
+                    color: "rgba(240, 236, 228, 0.3)",
+                    letterSpacing: "0.1em",
+                  }}>
+                    Built on: {chapter.builtOn.join(" → ")}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Beat indicator dots */}
+            {isActive && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: "clamp(12px, 2vw, 24px)",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  zIndex: 30,
+                }}
+              >
+                {Array.from({ length: BEATS_PER_WORLD }, (_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      width: i === currentBeat ? 3 : 3,
+                      height: i === currentBeat ? 20 : 8,
+                      borderRadius: 2,
+                      background: i <= currentBeat ? world.accent : "rgba(240, 236, 228, 0.2)",
+                      transition: "all 300ms ease",
+                      boxShadow: i === currentBeat ? `0 0 8px ${world.accent}66` : "none",
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* World progress bar */}
+            {isActive && (
+              <div
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  height: 3,
+                  width: `${p * 100}%`,
+                  background: `linear-gradient(90deg, transparent, ${world.accent})`,
+                  boxShadow: `0 0 12px ${world.accent}66`,
+                  zIndex: 30,
+                }}
+              />
+            )}
+          </div>
         </>
       )}
 
       <style>{`
-        @keyframes world-entry-flash {
-          0% { opacity: 0.6; transform: scale(0.95); }
-          100% { opacity: 0; transform: scale(1.1); }
-        }
-        @keyframes skill-pulse {
-          0%, 100% { box-shadow: 0 0 10px currentColor; }
-          50% { box-shadow: 0 0 20px currentColor, 0 0 40px currentColor; }
+        @keyframes skill-glow {
+          0%, 100% { box-shadow: 0 0 12px currentColor; transform: scale(1); }
+          50% { box-shadow: 0 0 24px currentColor, 0 0 48px currentColor; transform: scale(1.1); }
         }
       `}</style>
     </section>
   );
 }
 
-function clamp01(v: number): number {
-  return Math.max(0, Math.min(1, v));
+/**
+ * Glass Panel — backdrop-blur card for readable text over busy art.
+ */
+function GlassPanel({
+  visible,
+  accent,
+  maxWidth,
+  children,
+}: {
+  visible: number;
+  accent: string;
+  maxWidth: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        opacity: visible,
+        transform: `translateY(${(1 - visible) * 16}px) scale(${0.97 + visible * 0.03})`,
+        transition: "opacity 500ms ease, transform 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+        width: "100%",
+        maxWidth,
+        marginBottom: 20,
+        pointerEvents: visible > 0.5 ? "auto" : "none",
+      }}
+    >
+      <div
+        style={{
+          padding: "clamp(16px, 3vw, 28px)",
+          background: "rgba(5, 3, 16, 0.65)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          border: `1px solid ${accent}22`,
+          boxShadow: `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 ${accent}11`,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
 }
 
 /**
  * Atmospheric floating particles.
  */
 function Particles({ accent, active }: { accent: string; active: boolean }) {
-  const particles = Array.from({ length: 20 }, (_, i) => ({
+  const particles = Array.from({ length: 16 }, (_, i) => ({
     id: i,
-    left: `${3 + (i * 5.1) % 94}%`,
-    top: `${5 + (i * 9.7) % 85}%`,
-    size: 1.5 + (i % 4) * 1,
-    duration: 4 + (i % 6) * 2,
-    delay: i * 0.25,
+    left: `${4 + (i * 6) % 92}%`,
+    top: `${8 + (i * 9) % 80}%`,
+    size: 1.5 + (i % 3),
+    duration: 4 + (i % 5) * 2,
+    delay: i * 0.3,
   }));
 
   return (
@@ -469,8 +492,8 @@ function Particles({ accent, active }: { accent: string; active: boolean }) {
         position: "absolute",
         inset: 0,
         pointerEvents: "none",
-        zIndex: 10,
-        opacity: active ? 0.8 : 0,
+        zIndex: 5,
+        opacity: active ? 0.6 : 0,
         transition: "opacity 2s ease",
       }}
     >
@@ -485,17 +508,15 @@ function Particles({ accent, active }: { accent: string; active: boolean }) {
             height: pt.size,
             borderRadius: "50%",
             background: accent,
-            boxShadow: `0 0 ${pt.size * 5}px ${accent}44`,
-            animation: `particle-rise ${pt.duration}s ease-in-out ${pt.delay}s infinite`,
+            boxShadow: `0 0 ${pt.size * 4}px ${accent}55`,
+            animation: `particle-up ${pt.duration}s ease-in-out ${pt.delay}s infinite`,
           }}
         />
       ))}
       <style>{`
-        @keyframes particle-rise {
-          0%, 100% { transform: translate(0, 0); opacity: 0.15; }
-          25% { transform: translate(3px, -15px); opacity: 0.5; }
-          50% { transform: translate(-3px, -30px); opacity: 0.7; }
-          75% { transform: translate(4px, -20px); opacity: 0.4; }
+        @keyframes particle-up {
+          0%, 100% { transform: translateY(0); opacity: 0.2; }
+          50% { transform: translateY(-20px); opacity: 0.6; }
         }
       `}</style>
     </div>
