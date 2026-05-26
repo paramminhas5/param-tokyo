@@ -5,8 +5,8 @@ import { HERO, CHAPTERS, SKILL_GROUPS, PRESS } from "@/content/resume";
 import { WORLDS } from "@/game/journey";
 
 /**
- * Visual CV — magazine-grade printable resume with world thumbnails
- * and colored skill tags. Rich on screen, clean in print.
+ * Visual CV — timeline-style infographic resume.
+ * Numbered accent badges per chapter, clear skill dots, readable tags.
  */
 export default function CvPage() {
   return (
@@ -18,7 +18,7 @@ export default function CvPage() {
         fontFamily: "var(--font-display)",
       }}
     >
-      {/* No-print nav */}
+      {/* Top bar */}
       <div
         className="no-print"
         style={{
@@ -26,12 +26,12 @@ export default function CvPage() {
           top: 0,
           left: 0,
           right: 0,
-          padding: "12px 20px",
+          padding: "10px 20px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           zIndex: 50,
-          background: "rgba(250, 248, 244, 0.9)",
+          background: "rgba(250, 248, 244, 0.92)",
           backdropFilter: "blur(8px)",
           borderBottom: "1px solid #0e082011",
         }}
@@ -40,11 +40,9 @@ export default function CvPage() {
           href="/"
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            letterSpacing: "0.12em",
-            padding: "6px 14px",
+            fontSize: 10,
+            letterSpacing: "0.15em",
             color: "#0e0820",
-            border: "1px solid #0e082022",
             textDecoration: "none",
             textTransform: "uppercase",
           }}
@@ -56,9 +54,9 @@ export default function CvPage() {
             href="/play"
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: 11,
+              fontSize: 10,
               letterSpacing: "0.12em",
-              padding: "6px 14px",
+              padding: "5px 12px",
               color: "#0e0820",
               border: "1px solid #0e082022",
               textDecoration: "none",
@@ -71,9 +69,9 @@ export default function CvPage() {
             onClick={() => window.print()}
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: 11,
+              fontSize: 10,
               letterSpacing: "0.12em",
-              padding: "6px 14px",
+              padding: "5px 12px",
               color: "#faf8f4",
               background: "#0e0820",
               border: "none",
@@ -81,159 +79,111 @@ export default function CvPage() {
               textTransform: "uppercase",
             }}
           >
-            Save PDF
+            PDF
           </button>
         </div>
       </div>
 
-      <main style={{ maxWidth: 860, margin: "0 auto", padding: "80px 24px 60px" }}>
-        {/* Header with world art accent */}
-        <header
-          style={{
-            position: "relative",
-            marginBottom: 48,
-            padding: "40px 32px",
-            background: "#0e0820",
-            color: "#f0ece4",
-            overflow: "hidden",
-          }}
-        >
-          {/* BG art */}
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              inset: 0,
-              backgroundImage: `url(${WORLDS.origin.bg})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              opacity: 0.2,
-              filter: "blur(1px)",
-            }}
-          />
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(135deg, rgba(14,8,32,0.9) 0%, rgba(14,8,32,0.7) 100%)",
-            }}
-          />
-          <div style={{ position: "relative", zIndex: 2 }}>
-            <h1
-              style={{
-                fontSize: "clamp(28px, 5vw, 44px)",
-                fontWeight: 700,
-                lineHeight: 1.1,
-                marginBottom: 8,
-              }}
-            >
-              {HERO.name}
-            </h1>
-            <p style={{ fontSize: 15, opacity: 0.8, marginBottom: 4 }}>
-              {HERO.tagline}
-            </p>
-            <p style={{ fontSize: 13, opacity: 0.5 }}>
-              {HERO.location} · {HERO.email}
-            </p>
-            <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
-              {Object.entries(HERO.links).map(([key, url]) => (
-                <a
-                  key={key}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 10,
-                    color: "rgba(240,236,228,0.5)",
-                    textDecoration: "none",
-                    textTransform: "capitalize",
-                    padding: "3px 8px",
-                    border: "1px solid rgba(240,236,228,0.2)",
-                  }}
-                >
-                  {key}
-                </a>
-              ))}
-            </div>
+      <main style={{ maxWidth: 780, margin: "0 auto", padding: "72px 24px 60px" }}>
+        {/* Header */}
+        <header style={{ marginBottom: 40, paddingTop: 20 }}>
+          <h1 style={{ fontSize: "clamp(28px, 5vw, 40px)", fontWeight: 700, lineHeight: 1.1, marginBottom: 6 }}>
+            {HERO.name}
+          </h1>
+          <p style={{ fontSize: 15, color: "#0e0820aa", marginBottom: 4 }}>{HERO.tagline}</p>
+          <p style={{ fontSize: 13, color: "#0e082077" }}>{HERO.location} · {HERO.email}</p>
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            {Object.entries(HERO.links).map(([key, url]) => (
+              <a key={key} href={url} target="_blank" rel="noopener noreferrer"
+                style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#0e082055", textDecoration: "none", textTransform: "capitalize", padding: "2px 6px", border: "1px solid #0e082015" }}>
+                {key}
+              </a>
+            ))}
           </div>
         </header>
 
-        {/* Stats grid */}
-        <section style={{ marginBottom: 40 }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-              gap: 1,
-              background: "#0e082011",
-              border: "1px solid #0e082011",
-            }}
-          >
+        {/* Stats */}
+        <section style={{ marginBottom: 36 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
             {HERO.stats.map((s) => (
-              <div key={s.label} style={{ padding: "14px 12px", background: "#faf8f4" }}>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "#0e0820" }}>{s.value}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#0e082077", marginTop: 4 }}>
-                  {s.label}
-                </div>
+              <div key={s.label}>
+                <span style={{ fontSize: 20, fontWeight: 700, color: "#0e0820" }}>{s.value}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em", color: "#0e082066", marginLeft: 6, textTransform: "uppercase" }}>{s.label}</span>
               </div>
             ))}
           </div>
         </section>
 
         {/* Bio */}
-        <section style={{ marginBottom: 48 }}>
-          <p style={{ fontSize: 15, lineHeight: 1.7, color: "#0e0820cc", maxWidth: 640 }}>
-            {HERO.bio}
-          </p>
+        <section style={{ marginBottom: 44 }}>
+          <p style={{ fontSize: 14, lineHeight: 1.75, color: "#0e0820bb", maxWidth: 580 }}>{HERO.bio}</p>
         </section>
 
-        {/* Experience — with world thumbnails */}
-        <section style={{ marginBottom: 48 }}>
-          <SectionTitle>Experience</SectionTitle>
+        {/* Timeline Experience */}
+        <section style={{ marginBottom: 44 }}>
+          <CvSection title="Experience" />
 
-          {CHAPTERS.map((ch) => {
-            const world = WORLDS[ch.id];
-            return (
-              <article
-                key={ch.id}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "80px 1fr",
-                  gap: 16,
-                  marginBottom: 28,
-                  paddingBottom: 28,
-                  borderBottom: "1px solid #0e082009",
-                }}
-              >
-                {/* World thumbnail */}
-                <div
+          <div style={{ position: "relative", paddingLeft: 40 }}>
+            {/* Vertical timeline line */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                left: 15,
+                width: 2,
+                background: "linear-gradient(180deg, #0e082022 0%, #0e082011 100%)",
+              }}
+            />
+
+            {CHAPTERS.map((ch) => {
+              const world = WORLDS[ch.id];
+              return (
+                <article
+                  key={ch.id}
                   style={{
-                    width: 80,
-                    height: 80,
-                    backgroundImage: `url(${world?.bg})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    border: `2px solid ${world?.accent ?? "#ccc"}44`,
-                    flexShrink: 0,
+                    position: "relative",
+                    marginBottom: 32,
+                    paddingBottom: 32,
+                    borderBottom: "1px solid #0e082006",
                   }}
-                />
-
-                {/* Content */}
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                    <h3 style={{ fontSize: 17, fontWeight: 600, margin: 0 }}>{ch.org}</h3>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#0e082066" }}>{ch.year}</span>
+                >
+                  {/* Timeline badge — numbered circle */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: -40,
+                      top: 2,
+                      width: 30,
+                      height: 30,
+                      borderRadius: "50%",
+                      background: world?.accent ?? "#666",
+                      display: "grid",
+                      placeItems: "center",
+                      boxShadow: `0 2px 8px ${world?.accent ?? "#666"}33`,
+                    }}
+                  >
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: "#fff" }}>
+                      {ch.index}
+                    </span>
                   </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#0e082077", marginBottom: 8 }}>
+
+                  {/* Content */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>{ch.org}</h3>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#0e082055" }}>{ch.year}</span>
+                  </div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#0e082077", marginBottom: 10 }}>
                     {ch.role}
                   </div>
+
+                  {/* Paragraphs */}
                   {ch.paragraphs.map((p, i) => (
-                    <p key={i} style={{ fontSize: 13, lineHeight: 1.7, color: "#0e0820bb", margin: "0 0 6px" }}>{p}</p>
+                    <p key={i} style={{ fontSize: 13, lineHeight: 1.7, color: "#0e0820aa", margin: "0 0 6px" }}>{p}</p>
                   ))}
-                  {/* Outcomes as colored tags */}
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 10 }}>
+
+                  {/* Outcomes */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 10 }}>
                     {ch.outcomes.map((o, i) => (
                       <span
                         key={i}
@@ -241,51 +191,44 @@ export default function CvPage() {
                           fontFamily: "var(--font-mono)",
                           fontSize: 9,
                           padding: "3px 8px",
-                          background: `${world?.accent ?? "#666"}15`,
-                          color: `${world?.accent ?? "#666"}`,
-                          border: `1px solid ${world?.accent ?? "#666"}33`,
-                          letterSpacing: "0.03em",
-                          filter: "saturate(0.8)",
+                          background: "#0e082006",
+                          color: "#0e0820aa",
+                          border: "1px solid #0e082011",
                         }}
                       >
                         {o}
                       </span>
                     ))}
                   </div>
-                  {/* Skill earned */}
-                  <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: ch.skill.color }} />
+
+                  {/* Skill */}
+                  <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: ch.skill.color, boxShadow: `0 0 4px ${ch.skill.color}44` }} />
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#0e082088" }}>
-                      {ch.skill.name} ({ch.skill.family})
+                      {ch.skill.name}
+                    </span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#0e082044" }}>
+                      ({ch.skill.family})
                     </span>
                   </div>
-                </div>
-              </article>
-            );
-          })}
+                </article>
+              );
+            })}
+          </div>
         </section>
 
         {/* Skills */}
-        <section style={{ marginBottom: 48 }}>
-          <SectionTitle>Skills & Tools</SectionTitle>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24 }}>
+        <section style={{ marginBottom: 44 }}>
+          <CvSection title="Skills & Tools" />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
             {SKILL_GROUPS.map((g) => (
               <div key={g.title}>
-                <h3 style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: "#0e0820aa" }}>
+                <h3 style={{ fontSize: 11, fontWeight: 600, marginBottom: 8, color: "#0e082088", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                   {g.title}
                 </h3>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                   {g.items.map((item) => (
-                    <span
-                      key={item}
-                      style={{
-                        fontSize: 11,
-                        padding: "3px 8px",
-                        background: "#0e082006",
-                        color: "#0e0820aa",
-                        border: "1px solid #0e082011",
-                      }}
-                    >
+                    <span key={item} style={{ fontSize: 11, padding: "3px 7px", background: "#0e082005", color: "#0e0820aa", border: "1px solid #0e082011" }}>
                       {item}
                     </span>
                   ))}
@@ -296,61 +239,41 @@ export default function CvPage() {
         </section>
 
         {/* Press */}
-        <section style={{ marginBottom: 48 }}>
-          <SectionTitle>Press & Features</SectionTitle>
+        <section style={{ marginBottom: 40 }}>
+          <CvSection title="Press" />
           {PRESS.map((p, i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                gap: 14,
-                alignItems: "baseline",
-                padding: "10px 0",
-                borderBottom: "1px solid #0e082008",
-              }}
-            >
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#0e082055", minWidth: 90, flexShrink: 0, fontWeight: 600 }}>
-                {p.outlet}
-              </span>
+            <div key={i} style={{ display: "flex", gap: 12, padding: "8px 0", borderBottom: "1px solid #0e082006", alignItems: "baseline" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#0e082055", minWidth: 80, flexShrink: 0, fontWeight: 600 }}>{p.outlet}</span>
               <span style={{ fontSize: 13, color: "#0e0820aa" }}>{p.title}</span>
             </div>
           ))}
         </section>
 
-        {/* Footer */}
-        <footer style={{ textAlign: "center", padding: "24px 0", borderTop: "1px solid #0e082011" }}>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#0e082044", letterSpacing: "0.12em" }}>
+        <footer style={{ textAlign: "center", paddingTop: 20, borderTop: "1px solid #0e082011" }}>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#0e082033", letterSpacing: "0.15em" }}>
             {HERO.name} · {HERO.email} · {new Date().getFullYear()}
           </p>
         </footer>
       </main>
 
-      <style>{`
-        @media print {
-          @page { size: A4; margin: 12mm; }
-          body { background: white !important; }
-          .no-print { display: none !important; }
-        }
-      `}</style>
+      <style>{`@media print { @page { size: A4; margin: 12mm; } .no-print { display: none !important; } }`}</style>
     </div>
   );
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function CvSection({ title }: { title: string }) {
   return (
-    <h2
-      style={{
-        fontFamily: "var(--font-mono)",
-        fontSize: 11,
-        letterSpacing: "0.22em",
-        textTransform: "uppercase",
-        color: "#0e082055",
-        marginBottom: 20,
-        paddingBottom: 8,
-        borderBottom: "2px solid #0e0820",
-      }}
-    >
-      {children}
+    <h2 style={{
+      fontFamily: "var(--font-mono)",
+      fontSize: 10,
+      letterSpacing: "0.25em",
+      textTransform: "uppercase",
+      color: "#0e082044",
+      marginBottom: 18,
+      paddingBottom: 8,
+      borderBottom: "2px solid #0e0820",
+    }}>
+      {title}
     </h2>
   );
 }

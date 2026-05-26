@@ -4,16 +4,8 @@ import { useEffect, useState } from "react";
 import { CHAPTERS } from "@/content/resume";
 
 /**
- * Beat-based progress engine.
- * 
- * Each world has 4 "beats" (phases). Scroll advances through beats within
- * a world, then transitions to the next world. This gives cinematic pacing
- * where content reveals in deliberate stages.
- *
- * Beat 0: Title + Role (entry)
- * Beat 1: Cliff note + Hook
- * Beat 2: Full paragraphs
- * Beat 3: Outcomes + Skill earned
+ * Scroll progress engine.
+ * Tracks which world section the viewport is in and progress within it.
  */
 
 export const BEATS_PER_WORLD = 4;
@@ -21,13 +13,9 @@ export const BEATS_PER_WORLD = 4;
 export interface ProgressSnapshot {
   worldIndex: number;
   worldId: string | null;
-  /** 0..1 progress within the current world */
   worldProgress: number;
-  /** Which beat (0-3) within the world */
   beat: number;
-  /** 0..1 progress within the current beat */
   beatProgress: number;
-  /** 0..1 across the entire page */
   totalProgress: number;
 }
 
@@ -79,7 +67,6 @@ function install() {
       Math.min(1, window.scrollY / Math.max(1, doc.scrollHeight - window.innerHeight))
     );
 
-    // Calculate beat from worldProgress
     const beat = Math.min(BEATS_PER_WORLD - 1, Math.floor(bestProgress * BEATS_PER_WORLD));
     const beatProgress = (bestProgress * BEATS_PER_WORLD) - beat;
 
