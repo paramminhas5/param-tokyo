@@ -13,13 +13,20 @@ import { CustomCursor } from "./CustomCursor";
 /**
  * GameExperience — the entire scroll-driven résumé.
  *
+ * Total scroll height:
+ *   Intro   1 × 100vh
+ *   Worlds  9 × 300vh = 2700vh
+ *   Outro   ~120vh
+ *   ≈ 2920vh
+ *
  * Structure:
- *   CustomCursor (fixed, color-synced to world)
- *   GlobalHud    (fixed overlay — progress bar, dot nav, skill HUD, CV link, mute)
+ *   CustomCursor  (fixed, colour-synced to world)
+ *   GlobalHud     (fixed overlay — progress, dots, skill bar, mute, CV)
+ *   PreloadManager (invisible, preloads next 2 worlds)
  *   <main>
- *     Intro     (100vh)
- *     WorldStage × 9  (each 200vh — sticky scene + scroll space)
- *     Outro     (100vh+)
+ *     Intro
+ *     WorldStage × 9
+ *     Outro
  *   </main>
  */
 export function GameExperience() {
@@ -40,37 +47,33 @@ export function GameExperience() {
 }
 
 /**
- * PreloadManager — preloads bg + fg images for the next world ahead of time.
- * Uses a hidden <link rel="preload"> strategy via DOM insertion.
+ * Preloads bg + all layer assets for the next 2 worlds ahead of scroll position.
  */
 function PreloadManager() {
   const totalP = useTotalProgress();
 
   useEffect(() => {
-    const INTRO_W = 1, WORLD_W = 2;
+    const INTRO_W = 1, WORLD_W = 3;
     const total_W = INTRO_W + CHAPTERS.length * WORLD_W + 1;
-
-    // Find current world index
     const currentIdx = Math.min(
       CHAPTERS.length - 1,
       Math.max(0, Math.floor((totalP * total_W - INTRO_W) / WORLD_W))
     );
 
-    // Preload next 2 worlds
     [currentIdx + 1, currentIdx + 2].forEach((idx) => {
       if (idx < 0 || idx >= CHAPTERS.length) return;
       const ch = CHAPTERS[idx];
-      const world = WORLDS[ch.id];
-      if (!world) return;
-
-      [world.bg, world.fg].forEach((src) => {
+      const w  = WORLDS[ch.id];
+      if (!w) return;
+      const layers = [w.sky, w.far, w.mid, w.near, w.fg];
+      layers.forEach((src) => {
         const id = `preload-${src}`;
         if (document.getElementById(id)) return;
-        const link = document.createElement("link");
-        link.id = id;
-        link.rel = "preload";
-        link.as = "image";
-        link.href = src;
+        const link  = document.createElement("link");
+        link.id     = id;
+        link.rel    = "preload";
+        link.as     = "image";
+        link.href   = src;
         document.head.appendChild(link);
       });
     });
