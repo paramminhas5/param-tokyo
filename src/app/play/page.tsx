@@ -1,20 +1,9 @@
-import type { Metadata } from "next";
-import { CHAPTERS, HERO } from "@/content/resume";
-import { PlayClient } from "@/components/PlayClient";
-
-export const metadata: Metadata = {
-  title: "Experience",
-  description: `${HERO.name} — interactive career journey. Scroll through ${CHAPTERS.length} worlds.`,
-  openGraph: {
-    title: "Experience · Param Minhas",
-    description: "15 years of building. Scroll through 9 worlds.",
-  },
-};
+import { redirect } from "next/navigation";
 
 /**
- * The Game — visual novel style career walkthrough.
- * Server component wraps the client PlayClient.
+ * /play now redirects to / since the entire experience lives on one page.
+ * The legacy Pokemon-style game is preserved at /play/legacy.
  */
 export default function PlayPage() {
-  return <PlayClient />;
+  redirect("/");
 }

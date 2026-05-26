@@ -1,21 +1,22 @@
 import type { Metadata } from "next";
 import { HERO } from "@/content/resume";
-import { GameMenu } from "@/components/home/GameMenu";
+import { Journey } from "@/components/Journey";
 
 export const metadata: Metadata = {
-  title: "Param Minhas — Founder & Operator",
+  title: "Param Minhas — Interactive Resume",
   description: HERO.bio,
   openGraph: {
     title: `${HERO.name} — ${HERO.tagline}`,
-    description: HERO.bio,
+    description: "An interactive journey through 15 years of building.",
     type: "website",
   },
 };
 
 /**
- * Home — styled as a game title screen / main menu.
- * Single viewport, no scroll. Full-bleed world art, cinematic feel.
+ * The entire experience lives on one page.
+ * No routing between /, /play, /cv — it's one continuous world.
+ * /cv and /play/legacy remain as separate routes.
  */
 export default function HomePage() {
-  return <GameMenu />;
+  return <Journey />;
 }
