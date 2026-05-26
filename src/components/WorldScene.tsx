@@ -72,7 +72,6 @@ export function WorldScene({ chapter }: Props) {
         position: "relative",
         width: "100%",
         minHeight: "280vh", // tall enough for 4 beats
-        overflow: "hidden",
         background: world.ink,
       }}
     >
