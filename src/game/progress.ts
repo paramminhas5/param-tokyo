@@ -4,14 +4,18 @@ import { useEffect, useState } from "react";
 import { CHAPTERS } from "@/content/resume";
 
 /**
- * Simplified scroll progress engine.
+ * Scroll progress engine.
  * Tracks which world section the viewport is in and progress within it.
  */
+
+export const BEATS_PER_WORLD = 4;
 
 export interface ProgressSnapshot {
   worldIndex: number;
   worldId: string | null;
   worldProgress: number;
+  beat: number;
+  beatProgress: number;
   totalProgress: number;
 }
 
@@ -19,6 +23,8 @@ const initial: ProgressSnapshot = {
   worldIndex: -1,
   worldId: null,
   worldProgress: 0,
+  beat: 0,
+  beatProgress: 0,
   totalProgress: 0,
 };
 
@@ -61,10 +67,15 @@ function install() {
       Math.min(1, window.scrollY / Math.max(1, doc.scrollHeight - window.innerHeight))
     );
 
+    const beat = Math.min(BEATS_PER_WORLD - 1, Math.floor(bestProgress * BEATS_PER_WORLD));
+    const beatProgress = (bestProgress * BEATS_PER_WORLD) - beat;
+
     snapshot = {
       worldIndex: bestIdx,
       worldId: bestId,
       worldProgress: bestProgress,
+      beat,
+      beatProgress: Math.max(0, Math.min(1, beatProgress)),
       totalProgress,
     };
     listeners.forEach((l) => l(snapshot));

@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { CHAPTERS, HERO } from "@/content/resume";
-import { JourneyIntro } from "@/components/JourneyIntro";
-import { JourneyOutro } from "@/components/JourneyOutro";
-import { JourneyNav } from "@/components/JourneyNav";
-import { WorldScene } from "@/components/WorldScene";
+import { PlayClient } from "@/components/PlayClient";
 
 export const metadata: Metadata = {
   title: "Experience",
@@ -15,26 +12,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * The Game — visual narrative walkthrough of career.
- *
- * Pure scroll-driven experience:
- *   - Intro (name + scroll prompt)
- *   - 9 world scenes (parallax + narration overlays)
- *   - Outro (CTA + links)
- *   - Fixed dot nav (right side)
- *
- * No hero sprite, no NPCs, no mini-games.
- * Ambient audio plays per world. Clean, atmospheric, immersive.
+ * The Game — visual novel style career walkthrough.
+ * Server component wraps the client PlayClient.
  */
 export default function PlayPage() {
-  return (
-    <main style={{ position: "relative", background: "#050310" }}>
-      <JourneyNav />
-      <JourneyIntro />
-      {CHAPTERS.map((chapter) => (
-        <WorldScene key={chapter.id} chapter={chapter} />
-      ))}
-      <JourneyOutro />
-    </main>
-  );
+  return <PlayClient />;
 }
