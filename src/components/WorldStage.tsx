@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import { useScroll, useTransform, useSpring, motion } from "framer-motion";
 import type { Chapter } from "@/content/resume";
 import { WORLDS } from "@/game/journey";
+import { WorldParticles } from "./WorldParticles";
 import { playWorld } from "@/game/ambient";
 
 interface Props {
@@ -11,96 +12,118 @@ interface Props {
 }
 
 /**
- * WorldStage v3 — "The world is the story."
+ * WorldStage v4 — "The world is the story."
  *
- * 400vh per world. 4 acts. One narrative zone. No overlaps.
+ * Three cards, three zones, three entrance directions. No overlaps. Ever.
+ * FG character choreographs with each card phase.
+ * Entry revealed by a scan line sweeping left-to-right.
+ * Per-world ambient particles.
  *
- * Act 1 (p 0.00–0.15): Arrival — world blooms, FG rises, title appears center then drifts to watermark
- * Act 2 (p 0.15–0.66): Story — cliff note, then paragraphs, one at a time in same position
- * Act 3 (p 0.68–0.80): Proof — outcomes list + skill badge, same position
- * Act 4 (p 0.80–1.00): Departure — FG sinks, world dims, ink wipe
+ * Scroll timing (400vh):
+ *   p 0.00–0.04  Black → world blooms (bg brightens)
+ *   p 0.02–0.06  Entry scan line sweeps L→R
+ *   p 0.04–0.10  FG rises from below
+ *   p 0.06–0.13  Title card center-screen (chapter # + org + role)
+ *   p 0.13–0.15  Title fades → watermark appears top-left
+ *
+ *   p 0.14–0.32  CARD 1 — HOOK (cliff note) — slides UP, bottom-center
+ *   p 0.34–0.64  CARD 2 — STORY (paragraphs) — slides from LEFT, bottom-left
+ *                  p 0.44: para 2 fades in within card
+ *                  p 0.54: para 3 fades in within card
+ *   p 0.68–0.84  CARD 3 — PROOF (outcomes + skill) — slides from RIGHT, bottom-right
+ *
+ *   p 0.84–0.90  FG departs: sinks + fades
+ *   p 0.88–0.98  BG dims
+ *   p 0.90–1.00  Ink wipe rises from bottom + scan line at edge
  */
 export function WorldStage({ chapter }: Props) {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const world = WORLDS[chapter.id] ?? WORLDS.origin;
-  const accent = world.accent;
+  const world      = WORLDS[chapter.id] ?? WORLDS.origin;
+  const accent     = world.accent;
 
   const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end end"],
+    target:  sectionRef,
+    offset:  ["start start", "end end"],
   });
 
-  const p = useSpring(scrollYProgress, { stiffness: 100, damping: 26, mass: 0.4 });
+  // Spring — physical weight to all motion
+  const p = useSpring(scrollYProgress, { stiffness: 90, damping: 24, mass: 0.5 });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // BACKGROUND
-  // ═══════════════════════════════════════════════════════════════════════════
-  const bgY = useTransform(p, [0, 1], ["0%", "-6%"]);
-  const bgScale = useTransform(p, [0, 1], [1.06, 1.0]);
-  const bgBrightness = useTransform(p, [0, 0.03, 0.88, 0.98], [0, 1, 1, 0.1]);
+  // ── BACKGROUND ──────────────────────────────────────────────────────────
+  const bgY          = useTransform(p, [0, 1], ["0%", "-6%"]);
+  const bgScale      = useTransform(p, [0, 1], [1.06, 1.0]);
+  const bgBrightness = useTransform(p,
+    [0, 0.04, 0.88, 0.98],
+    [0,    1,    1, 0.08]
+  );
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FG CHARACTER — enter, present, exit
-  // ═══════════════════════════════════════════════════════════════════════════
-  const fgOpacity = useTransform(p, [0, 0.06, 0.75, 0.88], [0, 1, 1, 0]);
-  const fgY = useTransform(p, [0, 0.06, 0.06, 0.75, 0.75, 0.88], ["80px", "0px", "0px", "0%", "0%", "50px"]);
-  const fgScale = useTransform(p, [0, 0.06, 0.75, 0.88], [0.95, 1.0, 1.06, 0.98]);
-  const fgParallax = useTransform(p, [0.06, 0.75], ["0%", "-10%"]);
+  // ── ENTRY SCAN LINE (sweeps L→R as world blooms) ────────────────────────
+  const scanEntryW   = useTransform(p, [0.02, 0.07], ["0%", "100%"]);
+  const scanEntryO   = useTransform(p, [0.02, 0.04, 0.06, 0.09], [0, 1, 1, 0]);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // TITLE CARD — center-screen entrance, then drifts to top-left watermark
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Center position (Act 1 entrance)
-  const titleCenterOpacity = useTransform(p, [0.04, 0.07, 0.10, 0.13], [0, 1, 1, 0]);
-  const titleCenterY = useTransform(p, [0.04, 0.07], [30, 0]);
-  const titleCenterScale = useTransform(p, [0.04, 0.07], [0.92, 1]);
+  // ── FG CHARACTER ────────────────────────────────────────────────────────
+  // Enter (rise from below) → present → choreograph per card → depart (sink)
+  const fgOpacity  = useTransform(p, [0, 0.07, 0.80, 0.90], [0, 1, 1, 0]);
+  const fgEnterY   = useTransform(p, [0.04, 0.10], [80, 0]);
+  const fgScale    = useTransform(p, [0.04, 0.10, 0.80, 0.90], [0.94, 1.0, 1.0, 0.96]);
+  const fgParallax = useTransform(p, [0.10, 0.80], ["0%", "-8%"]);
+  const fgDepartY  = useTransform(p, [0.80, 0.90], [0, 70]);
 
-  // Watermark (persistent after title drifts)
-  const watermarkOpacity = useTransform(p, [0.12, 0.15, 0.88, 0.92], [0, 1, 1, 0]);
+  // FG x-drift per card phase — character makes room
+  // Neutral → hook: lean in (slight L) → story: step R → proof: step L → depart: center
+  const fgX = useTransform(
+    p,
+    [0.10, 0.14, 0.32, 0.38, 0.64, 0.68, 0.84, 0.88],
+    ["0%","-4%","-4%", "6%",  "6%","-6%","-6%",  "0%"]
+  );
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // NARRATIVE ZONE — one thing at a time, same position
-  // Each: 4% fade-in, hold, 4% fade-out, 2% gap before next
-  // ═══════════════════════════════════════════════════════════════════════════
-  const cliffO = useTransform(p, [0.15, 0.19, 0.26, 0.30], [0, 1, 1, 0]);
-  const cliffY = useTransform(p, [0.15, 0.19], [20, 0]);
+  // ── TITLE CARD — center screen arrival ──────────────────────────────────
+  const titleO     = useTransform(p, [0.06, 0.10, 0.11, 0.14], [0, 1, 1, 0]);
+  const titleY     = useTransform(p, [0.06, 0.10], [28, 0]);
+  const titleScale = useTransform(p, [0.06, 0.10], [0.90, 1]);
 
-  const p1O = useTransform(p, [0.32, 0.36, 0.40, 0.44], [0, 1, 1, 0]);
-  const p1Y = useTransform(p, [0.32, 0.36], [20, 0]);
+  // ── WATERMARK — top-left after title drifts ──────────────────────────────
+  const wmarkO = useTransform(p, [0.13, 0.16, 0.88, 0.92], [0, 1, 1, 0]);
 
-  const p2O = useTransform(p, [0.46, 0.50, 0.54, 0.58], [0, 1, 1, 0]);
-  const p2Y = useTransform(p, [0.46, 0.50], [20, 0]);
+  // ── CARD 1: HOOK — bottom-center, slides UP ─────────────────────────────
+  const c1O = useTransform(p, [0.14, 0.20, 0.28, 0.32], [0, 1, 1, 0]);
+  const c1Y = useTransform(p, [0.14, 0.20, 0.28, 0.32], [48, 0, 0, 48]);
 
-  const p3O = useTransform(p, [0.58, 0.62, 0.64, 0.66], [0, 1, 1, 0]);
-  const p3Y = useTransform(p, [0.58, 0.62], [20, 0]);
+  // ── CARD 2: STORY — bottom-left, slides from LEFT ───────────────────────
+  const c2O = useTransform(p, [0.34, 0.40, 0.58, 0.64], [0, 1, 1, 0]);
+  const c2X = useTransform(p, [0.34, 0.40, 0.58, 0.64], [-52, 0, 0, -52]);
+  // Inner para stagger
+  const c2p2O = useTransform(p, [0.44, 0.50], [0, 1]);
+  const c2p3O = useTransform(p, [0.54, 0.60], [0, 1]);
 
-  const proofO = useTransform(p, [0.68, 0.72, 0.78, 0.80], [0, 1, 1, 0]);
-  const proofY = useTransform(p, [0.68, 0.72], [20, 0]);
+  // ── CARD 3: PROOF — bottom-right, slides from RIGHT ─────────────────────
+  const c3O = useTransform(p, [0.68, 0.74, 0.80, 0.84], [0, 1, 1, 0]);
+  const c3X = useTransform(p, [0.68, 0.74, 0.80, 0.84], [52, 0, 0, 52]);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // INK WIPE EXIT
-  // ═══════════════════════════════════════════════════════════════════════════
-  const inkHeight = useTransform(p, [0.90, 1.0], ["0%", "100%"]);
-  const scanBottom = useTransform(p, [0.90, 1.0], ["100%", "0%"]);
-  const scanOpacity = useTransform(p, [0.90, 0.95, 1.0], [0, 1, 0]);
+  // ── INK WIPE EXIT ───────────────────────────────────────────────────────
+  const inkH      = useTransform(p, [0.90, 1.0], ["0%", "100%"]);
+  const scanExitB = useTransform(p, [0.90, 1.0],  ["100%", "0%"]);
+  const scanExitO = useTransform(p, [0.90, 0.95, 1.0], [0, 1, 0]);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PROGRESS BAR
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ── PROGRESS BAR ────────────────────────────────────────────────────────
   const progressW = useTransform(p, [0, 1], ["0%", "100%"]);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // AUDIO
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ── PARTICLES VISIBILITY ────────────────────────────────────────────────
+  const [ptVisible, setPtVisible] = useState(false);
   useEffect(() => {
     return scrollYProgress.on("change", (v) => {
-      if (v > 0.03 && v < 0.88) playWorld(chapter.id);
+      setPtVisible(v > 0.05 && v < 0.90);
+    });
+  }, [scrollYProgress]);
+
+  // ── AUDIO ────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    return scrollYProgress.on("change", (v) => {
+      if (v > 0.04 && v < 0.88) playWorld(chapter.id);
     });
   }, [scrollYProgress, chapter.id]);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // MOBILE
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ── MOBILE ──────────────────────────────────────────────────────────────
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -109,358 +132,396 @@ export function WorldStage({ chapter }: Props) {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // NARRATIVE PILL STYLE — reusable for all text elements
-  // ═══════════════════════════════════════════════════════════════════════════
-  const pillStyle: React.CSSProperties = {
-    padding: isMobile ? "14px 18px" : "18px 24px",
-    background: "rgba(5, 3, 16, 0.62)",
-    backdropFilter: "blur(14px)",
-    WebkitBackdropFilter: "blur(14px)",
-    borderLeft: `3px solid ${accent}`,
-    borderRadius: 2,
-    boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 20px ${accent}0a`,
+  // Shared card glass style
+  const glass: React.CSSProperties = {
+    background:          "rgba(5, 3, 16, 0.68)",
+    backdropFilter:      "blur(18px)",
+    WebkitBackdropFilter:"blur(18px)",
+    boxShadow:           `0 16px 60px rgba(0,0,0,0.6), 0 0 0 1px ${accent}22`,
   };
 
   return (
-    <section ref={sectionRef} id={chapter.id} style={{ position: "relative", height: "400vh" }}>
+    <section
+      ref={sectionRef}
+      id={chapter.id}
+      style={{ position: "relative", height: "400vh" }}
+    >
+      {/* ── STICKY VIEWPORT ─────────────────────────────────────────────── */}
       <div style={{
         position: "sticky", top: 0, height: "100vh",
         overflow: "hidden", background: world.ink,
       }}>
 
-        {/* ═══ BACKGROUND PAINTING ═══════════════════════════════════════ */}
-        <motion.div style={{
-          position: "absolute", inset: "-6%",
-          backgroundImage: `url(${world.bg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          y: bgY,
-          scale: bgScale,
-          filter: useTransform(bgBrightness, (v) => `brightness(${v}) saturate(1.2)`),
-          willChange: "transform",
-        }} />
+        {/* ── BACKGROUND ───────────────────────────────────────────────── */}
+        <motion.div
+          aria-hidden
+          style={{
+            position: "absolute", inset: "-6%",
+            backgroundImage:    `url(${world.bg})`,
+            backgroundSize:     "cover",
+            backgroundPosition: "center",
+            y: bgY, scale: bgScale,
+            filter: useTransform(bgBrightness, (v) =>
+              `brightness(${v * world.brightness / 0.45}) saturate(1.15)`
+            ),
+            willChange: "transform",
+          }}
+        />
 
-        {/* ═══ ATMOSPHERE OVERLAY ════════════════════════════════════════ */}
+        {/* ── VIGNETTE ─────────────────────────────────────────────────── */}
         <div aria-hidden style={{
           position: "absolute", inset: 0, zIndex: 2,
-          background: `
-            radial-gradient(ellipse 130% 100% at 50% 50%, transparent 40%, ${world.ink}77 100%),
-            linear-gradient(180deg, ${world.ink}22 0%, transparent 12%, transparent 70%, ${world.ink}bb 100%)
-          `,
+          background: world.vignette,
           pointerEvents: "none",
         }} />
 
-        {/* ═══ FG CHARACTER ══════════════════════════════════════════════ */}
+        {/* ── PARTICLES ────────────────────────────────────────────────── */}
+        <div style={{ position: "absolute", inset: 0, zIndex: 3 }}>
+          <WorldParticles theme={world.particles} visible={ptVisible} />
+        </div>
+
+        {/* ── ENTRY SCAN LINE (L→R reveal) ─────────────────────────────── */}
+        <motion.div aria-hidden style={{
+          position: "absolute", top: 0, left: 0, bottom: 0,
+          width: scanEntryW,
+          background: `linear-gradient(90deg, transparent, ${accent}66, transparent)`,
+          boxShadow: `2px 0 20px ${accent}88`,
+          opacity: scanEntryO,
+          zIndex: 22, pointerEvents: "none",
+        }} />
+
+        {/* ── FG CHARACTER ─────────────────────────────────────────────── */}
         <motion.div style={{
-          position: "absolute",
-          bottom: 0,
-          left: "50%",
-          x: "-50%",
-          width: isMobile ? "clamp(180px, 55vw, 300px)" : "clamp(260px, 36vw, 500px)",
+          position: "absolute", bottom: 0, left: "50%",
+          x: useTransform(fgX, (v) => `calc(-50% + ${v})`),
+          width: isMobile
+            ? "clamp(160px, 50vw, 280px)"
+            : "clamp(240px, 34vw, 460px)",
           transformOrigin: "bottom center",
           opacity: fgOpacity,
-          y: fgY,
+          y:     useTransform([fgEnterY, fgDepartY], ([ey, dy]) => (ey as number) + (dy as number)),
           scale: fgScale,
-          zIndex: 3,
-          willChange: "transform",
+          zIndex: 4, willChange: "transform",
         }}>
           <motion.img
             src={world.fg}
             alt={chapter.org}
             style={{
-              width: "100%",
-              display: "block",
-              objectFit: "contain",
-              objectPosition: "bottom center",
+              width: "100%", display: "block",
+              objectFit: "contain", objectPosition: "bottom center",
               y: fgParallax,
-              filter: `drop-shadow(0 -16px 50px rgba(0,0,0,0.7)) drop-shadow(0 0 24px ${accent}18)`,
+              filter: `drop-shadow(0 -14px 44px rgba(0,0,0,0.75))
+                       drop-shadow(0 0 20px ${accent}1a)`,
             }}
           />
         </motion.div>
 
-        {/* ═══ TITLE CARD — center screen (Act 1 arrival) ═══════════════ */}
-        <motion.div style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          x: "-50%",
-          y: titleCenterY,
-          translateY: "-50%",
-          opacity: titleCenterOpacity,
-          scale: titleCenterScale,
-          zIndex: 10,
-          textAlign: "center",
-          pointerEvents: "none",
-        }}>
+        {/* ── TITLE CARD — center screen on arrival ────────────────────── */}
+        <motion.div
+          style={{
+            position: "absolute", top: "50%", left: "50%",
+            x: "-50%", y: titleY, translateY: "-50%",
+            opacity: titleO, scale: titleScale,
+            zIndex: 12, textAlign: "center", pointerEvents: "none",
+          }}
+        >
           <div style={{
             fontFamily: "var(--font-mono)",
-            fontSize: isMobile ? 48 : 72,
-            fontWeight: 700,
-            color: accent,
-            lineHeight: 1,
-            textShadow: `0 0 60px ${accent}66, 0 4px 30px rgba(0,0,0,0.9)`,
-            marginBottom: 12,
+            fontSize:   isMobile ? 52 : 80,
+            fontWeight: 700, color: accent, lineHeight: 1,
+            textShadow: `0 0 80px ${accent}77, 0 4px 30px rgba(0,0,0,0.95)`,
+            marginBottom: 10,
           }}>
             {String(chapter.index).padStart(2, "0")}
           </div>
           <div style={{
             fontFamily: "var(--font-display)",
-            fontSize: isMobile ? "clamp(28px, 8vw, 40px)" : "clamp(36px, 5vw, 64px)",
-            fontWeight: 700,
-            color: "#f0ece4",
-            lineHeight: 1.0,
-            textShadow: "0 4px 30px rgba(0,0,0,0.9)",
-            marginBottom: 8,
+            fontSize:   isMobile ? "clamp(26px, 7vw, 38px)" : "clamp(34px, 5vw, 60px)",
+            fontWeight: 700, color: "#f0ece4", lineHeight: 1.0,
+            textShadow: "0 4px 32px rgba(0,0,0,0.95)", marginBottom: 8,
           }}>
             {chapter.org}
           </div>
           <div style={{
             fontFamily: "var(--font-mono)",
-            fontSize: isMobile ? 10 : 12,
-            letterSpacing: "0.25em",
-            textTransform: "uppercase",
-            color: "rgba(240,236,228,0.55)",
+            fontSize: isMobile ? 9 : 11,
+            letterSpacing: "0.24em", textTransform: "uppercase",
+            color: "rgba(240,236,228,0.6)",
           }}>
             {chapter.role} · {chapter.year}
           </div>
         </motion.div>
 
-        {/* ═══ WATERMARK — top-left, persistent after title drifts ══════ */}
+        {/* ── WATERMARK — top-left after title ─────────────────────────── */}
         <motion.div style={{
           position: "absolute",
-          top: isMobile ? 14 : 22,
-          left: isMobile ? 40 : 48,
-          zIndex: 10,
-          opacity: watermarkOpacity,
-          display: "flex",
-          alignItems: "baseline",
-          gap: 10,
+          top:  isMobile ? 14 : 22,
+          left: isMobile ? 38 : 46,
+          zIndex: 12, opacity: wmarkO,
+          display: "flex", alignItems: "baseline", gap: 9,
           pointerEvents: "none",
         }}>
           <span style={{
             fontFamily: "var(--font-mono)",
-            fontSize: isMobile ? 20 : 28,
-            fontWeight: 700,
-            color: accent,
-            lineHeight: 1,
-            textShadow: `0 0 24px ${accent}44, 0 2px 12px rgba(0,0,0,0.8)`,
+            fontSize:   isMobile ? 18 : 24,
+            fontWeight: 700, color: accent, lineHeight: 1,
+            textShadow: `0 0 20px ${accent}44`,
           }}>
             {String(chapter.index).padStart(2, "0")}
           </span>
           <div>
             <div style={{
               fontFamily: "var(--font-display)",
-              fontSize: isMobile ? 13 : 16,
-              fontWeight: 600,
-              color: "#f0ece4",
-              lineHeight: 1.1,
+              fontSize:   isMobile ? 12 : 15,
+              fontWeight: 600, color: "#f0ece4", lineHeight: 1.1,
               textShadow: "0 2px 10px rgba(0,0,0,0.9)",
             }}>
               {chapter.org}
             </div>
             <div style={{
               fontFamily: "var(--font-mono)",
-              fontSize: 8,
-              letterSpacing: "0.18em",
+              fontSize: 7, letterSpacing: "0.16em",
               textTransform: "uppercase",
-              color: "rgba(240,236,228,0.35)",
-              marginTop: 2,
+              color: "rgba(240,236,228,0.32)", marginTop: 2,
             }}>
               {chapter.role} · {chapter.year}
             </div>
           </div>
         </motion.div>
 
-        {/* ═══════════════════════════════════════════════════════════════
-            NARRATIVE ZONE — bottom-left, one element at a time
-        ═══════════════════════════════════════════════════════════════ */}
-        <div style={{
+        {/* ════════════════════════════════════════════════════════════════
+            CARD 1 — HOOK (cliff note)
+            Position: bottom-center, slides UP
+        ════════════════════════════════════════════════════════════════ */}
+        <motion.div style={{
           position: "absolute",
-          bottom: isMobile ? 48 : 72,
-          left: isMobile ? 16 : 48,
-          right: isMobile ? 16 : "auto",
-          maxWidth: isMobile ? "none" : 440,
-          zIndex: 10,
+          bottom:   isMobile ? 44 : 68,
+          left:     "50%", x: "-50%",
+          width:    isMobile ? "calc(100vw - 32px)" : "clamp(400px, 58vw, 680px)",
+          zIndex:   12, opacity: c1O, y: c1Y,
         }}>
+          <div style={{
+            ...glass,
+            padding:    isMobile ? "18px 20px" : "22px 32px",
+            borderTop:  `3px solid ${accent}`,
+          }}>
+            <p style={{
+              fontFamily:  "var(--font-display)",
+              fontSize:    isMobile ? 17 : 21,
+              fontWeight:  500,
+              color:       "rgba(240,236,228,0.96)",
+              lineHeight:  1.5,
+              margin:      0,
+              textAlign:   "center",
+              textShadow:  "0 2px 14px rgba(0,0,0,0.85)",
+            }}>
+              {chapter.cliff}
+            </p>
+          </div>
+        </motion.div>
 
-          {/* ─── CLIFF NOTE ─────────────────────────────────────────── */}
-          <motion.div style={{ opacity: cliffO, y: cliffY, position: "absolute", bottom: 0, left: 0, right: 0 }}>
-            <div style={pillStyle}>
-              <p style={{
-                fontFamily: "var(--font-display)",
-                fontSize: isMobile ? 16 : 18,
-                fontWeight: 500,
-                color: "rgba(240,236,228,0.95)",
-                lineHeight: 1.55,
-                margin: 0,
-                textShadow: "0 2px 12px rgba(0,0,0,0.8)",
-              }}>
-                {chapter.cliff}
-              </p>
-            </div>
-          </motion.div>
+        {/* ════════════════════════════════════════════════════════════════
+            CARD 2 — STORY (paragraphs, bottom-left, slides from LEFT)
+        ════════════════════════════════════════════════════════════════ */}
+        <motion.div style={{
+          position: "absolute",
+          bottom:   isMobile ? 44 : 68,
+          left:     isMobile ? 16 : 48,
+          right:    isMobile ? 16 : "auto",
+          width:    isMobile ? "auto" : "clamp(320px, 38vw, 460px)",
+          zIndex:   12, opacity: c2O, x: c2X,
+        }}>
+          <div style={{
+            ...glass,
+            padding:    isMobile ? "16px 18px" : "20px 26px",
+            borderLeft: `3px solid ${accent}`,
+          }}>
+            {/* Para 1 — always visible when card is */}
+            <p style={{
+              fontFamily: "var(--font-display)",
+              fontSize:   isMobile ? 13 : 14,
+              color:      "rgba(240,236,228,0.88)",
+              lineHeight: 1.68, margin: 0,
+              textShadow: "0 1px 8px rgba(0,0,0,0.7)",
+            }}>
+              {chapter.paragraphs[0]}
+            </p>
 
-          {/* ─── PARAGRAPH 1 ────────────────────────────────────────── */}
-          <motion.div style={{ opacity: p1O, y: p1Y, position: "absolute", bottom: 0, left: 0, right: 0 }}>
-            <div style={pillStyle}>
-              <p style={{
-                fontFamily: "var(--font-display)",
-                fontSize: isMobile ? 14 : 15,
-                color: "rgba(240,236,228,0.85)",
-                lineHeight: 1.65,
-                margin: 0,
-                textShadow: "0 1px 8px rgba(0,0,0,0.7)",
-              }}>
-                {chapter.paragraphs[0]}
-              </p>
-            </div>
-          </motion.div>
-
-          {/* ─── PARAGRAPH 2 ────────────────────────────────────────── */}
-          {chapter.paragraphs[1] && (
-            <motion.div style={{ opacity: p2O, y: p2Y, position: "absolute", bottom: 0, left: 0, right: 0 }}>
-              <div style={pillStyle}>
+            {/* Para 2 — fades in mid-way */}
+            {chapter.paragraphs[1] && (
+              <motion.div style={{ opacity: c2p2O }}>
+                <div style={{
+                  height: 1, background: `${accent}22`,
+                  margin: "12px 0",
+                }} />
                 <p style={{
                   fontFamily: "var(--font-display)",
-                  fontSize: isMobile ? 14 : 15,
-                  color: "rgba(240,236,228,0.75)",
-                  lineHeight: 1.65,
-                  margin: 0,
+                  fontSize:   isMobile ? 13 : 14,
+                  color:      "rgba(240,236,228,0.74)",
+                  lineHeight: 1.68, margin: 0,
                   textShadow: "0 1px 8px rgba(0,0,0,0.7)",
                 }}>
                   {chapter.paragraphs[1]}
                 </p>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
 
-          {/* ─── PARAGRAPH 3 ────────────────────────────────────────── */}
-          {chapter.paragraphs[2] && (
-            <motion.div style={{ opacity: p3O, y: p3Y, position: "absolute", bottom: 0, left: 0, right: 0 }}>
-              <div style={pillStyle}>
+            {/* Para 3 — fades in near end (italic, the lesson) */}
+            {chapter.paragraphs[2] && (
+              <motion.div style={{ opacity: c2p3O }}>
+                <div style={{
+                  height: 1, background: `${accent}22`,
+                  margin: "12px 0",
+                }} />
                 <p style={{
                   fontFamily: "var(--font-display)",
-                  fontSize: isMobile ? 14 : 15,
-                  color: "rgba(240,236,228,0.65)",
-                  lineHeight: 1.65,
-                  margin: 0,
-                  fontStyle: "italic",
+                  fontSize:   isMobile ? 13 : 14,
+                  color:      "rgba(240,236,228,0.60)",
+                  lineHeight: 1.68, margin: 0,
+                  fontStyle:  "italic",
                   textShadow: "0 1px 8px rgba(0,0,0,0.7)",
                 }}>
                   {chapter.paragraphs[2]}
                 </p>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
 
-          {/* ─── OUTCOMES + SKILL (compact list) ────────────────────── */}
-          <motion.div style={{ opacity: proofO, y: proofY, position: "absolute", bottom: 0, left: 0, right: 0 }}>
-            <div style={pillStyle}>
-              {/* Outcomes as compact list with orb dots */}
-              <div style={{ marginBottom: 14 }}>
-                {chapter.outcomes.map((outcome) => (
-                  <div key={outcome} style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    marginBottom: 6,
-                  }}>
-                    <div style={{
-                      width: 6, height: 6, borderRadius: "50%",
-                      background: accent,
-                      boxShadow: `0 0 8px ${accent}`,
-                      flexShrink: 0,
-                    }} />
-                    <span style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: isMobile ? 10 : 11,
-                      color: accent,
-                      letterSpacing: "0.02em",
-                      textShadow: `0 0 8px ${accent}44`,
-                    }}>
-                      {outcome}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Skill badge */}
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                paddingTop: 12,
-                borderTop: `1px solid ${accent}33`,
-              }}>
-                <div style={{
-                  width: 10, height: 10, borderRadius: "50%",
-                  background: chapter.skill.color,
-                  boxShadow: `0 0 12px ${chapter.skill.color}`,
-                  flexShrink: 0,
-                }} />
-                <div>
+        {/* ════════════════════════════════════════════════════════════════
+            CARD 3 — PROOF (outcomes + skill, bottom-right, slides from RIGHT)
+        ════════════════════════════════════════════════════════════════ */}
+        <motion.div style={{
+          position: "absolute",
+          bottom:   isMobile ? 44 : 68,
+          right:    isMobile ? 16 : 48,
+          left:     isMobile ? 16 : "auto",
+          width:    isMobile ? "auto" : "clamp(260px, 30vw, 360px)",
+          zIndex:   12, opacity: c3O, x: c3X,
+        }}>
+          <div style={{
+            ...glass,
+            padding:     isMobile ? "16px 18px" : "20px 24px",
+            borderRight: `3px solid ${accent}`,
+          }}>
+            {/* Outcomes list */}
+            <div style={{ marginBottom: 14 }}>
+              {chapter.outcomes.map((outcome, i) => (
+                <div key={outcome} style={{
+                  display:       "flex",
+                  alignItems:    "center",
+                  gap:           10,
+                  marginBottom:  i < chapter.outcomes.length - 1 ? 8 : 0,
+                }}>
                   <div style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 7, letterSpacing: "0.3em",
-                    textTransform: "uppercase",
-                    color: chapter.skill.color,
-                    marginBottom: 2,
+                    width: 6, height: 6, borderRadius: "50%",
+                    background: accent,
+                    boxShadow:  `0 0 8px ${accent}cc`,
+                    flexShrink: 0,
+                  }} />
+                  <span style={{
+                    fontFamily:  "var(--font-mono)",
+                    fontSize:    isMobile ? 10 : 11,
+                    color:       accent,
+                    letterSpacing: "0.02em",
+                    textShadow:  `0 0 10px ${accent}66`,
                   }}>
-                    Skill Unlocked
-                  </div>
-                  <div style={{
-                    fontFamily: "var(--font-display)",
-                    fontSize: isMobile ? 14 : 16,
-                    fontWeight: 600,
-                    color: "#f0ece4",
-                  }}>
-                    {chapter.skill.name}
-                  </div>
+                    {outcome}
+                  </span>
                 </div>
+              ))}
+            </div>
+
+            {/* Skill badge */}
+            <div style={{
+              display:    "flex", alignItems: "center", gap: 10,
+              paddingTop: 12,
+              borderTop:  `1px solid ${accent}33`,
+            }}>
+              <div style={{
+                width: 10, height: 10, borderRadius: "50%",
+                background: chapter.skill.color,
+                boxShadow:  `0 0 14px ${chapter.skill.color}`,
+                flexShrink: 0,
+                animation:  "skill-pulse 2s ease-in-out infinite",
+              }} />
+              <div>
+                <div style={{
+                  fontFamily:    "var(--font-mono)",
+                  fontSize:      7, letterSpacing: "0.3em",
+                  textTransform: "uppercase",
+                  color:         chapter.skill.color,
+                  marginBottom:  2,
+                }}>
+                  Skill Unlocked
+                </div>
+                <div style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize:   isMobile ? 14 : 16,
+                  fontWeight: 600, color: "#f0ece4",
+                }}>
+                  {chapter.skill.name}
+                </div>
+                {chapter.builtOn.length > 0 && (
+                  <div style={{
+                    fontFamily:    "var(--font-mono)",
+                    fontSize:      8,
+                    color:         "rgba(240,236,228,0.30)",
+                    marginTop:     3, letterSpacing: "0.05em",
+                  }}>
+                    Built on: {chapter.builtOn.slice(-3).join(" → ")}
+                    {chapter.builtOn.length > 3 ? ` +${chapter.builtOn.length - 3}` : ""}
+                  </div>
+                )}
               </div>
             </div>
-          </motion.div>
+          </div>
+        </motion.div>
 
-        </div>
-        {/* END NARRATIVE ZONE */}
-
-        {/* ═══ INK WIPE ═════════════════════════════════════════════════ */}
+        {/* ── EXIT INK WIPE ────────────────────────────────────────────── */}
         <motion.div aria-hidden style={{
           position: "absolute", bottom: 0, left: 0, right: 0,
-          height: inkHeight, background: world.ink,
+          height: inkH, background: world.ink,
           zIndex: 30, pointerEvents: "none",
         }} />
         <motion.div aria-hidden style={{
-          position: "absolute", bottom: scanBottom, left: 0, right: 0,
+          position: "absolute", bottom: scanExitB, left: 0, right: 0,
           height: 2,
           background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
-          boxShadow: `0 0 14px ${accent}, 0 0 40px ${accent}66`,
-          opacity: scanOpacity,
+          boxShadow:  `0 0 16px ${accent}, 0 0 40px ${accent}88`,
+          opacity:    scanExitO,
           zIndex: 31, pointerEvents: "none",
         }} />
 
-        {/* ═══ PROGRESS BAR ═════════════════════════════════════════════ */}
+        {/* ── PROGRESS BAR ─────────────────────────────────────────────── */}
         <motion.div style={{
           position: "absolute", bottom: 0, left: 0, height: 2,
           width: progressW,
           background: `linear-gradient(90deg, ${accent}44, ${accent})`,
-          boxShadow: `0 0 8px ${accent}66`,
+          boxShadow:  `0 0 8px ${accent}66`,
           zIndex: 40,
         }} />
 
-        {/* ═══ WORLD ID — bottom right ═════════════════════════════════ */}
+        {/* ── WORLD ID — bottom right ───────────────────────────────────── */}
         <motion.div style={{
-          position: "absolute", bottom: 10, right: isMobile ? 14 : 22,
+          position: "absolute",
+          bottom: 10, right: isMobile ? 14 : 22,
           fontFamily: "var(--font-mono)", fontSize: 8,
           letterSpacing: "0.25em", textTransform: "uppercase",
-          color: "rgba(240,236,228,0.12)", zIndex: 20,
-          opacity: watermarkOpacity,
+          color: "rgba(240,236,228,0.11)", zIndex: 20,
+          opacity: wmarkO,
         }}>
           {chapter.id}
         </motion.div>
 
       </div>
+
+      <style>{`
+        @keyframes skill-pulse {
+          0%, 100% { box-shadow: 0 0 8px ${chapter.skill.color}; }
+          50%       { box-shadow: 0 0 20px ${chapter.skill.color}, 0 0 40px ${chapter.skill.color}66; }
+        }
+      `}</style>
     </section>
   );
 }
