@@ -65,8 +65,7 @@ function PreloadManager() {
       const ch = CHAPTERS[idx];
       const w  = WORLDS[ch.id];
       if (!w) return;
-      const layers = [w.sky, w.far, w.mid, w.near, w.fg];
-      layers.forEach((src) => {
+      [w.bg, w.fg].forEach((src) => {
         const id = `preload-${src}`;
         if (document.getElementById(id)) return;
         const link  = document.createElement("link");

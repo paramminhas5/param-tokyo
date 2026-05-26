@@ -52,7 +52,7 @@ export function Intro() {
       {worldKeys.map((id, i) => (
         <div key={id} aria-hidden style={{
           position: "absolute", inset: 0,
-          backgroundImage: `url(${WORLDS[id].sky})`,
+          backgroundImage: `url(${WORLDS[id].bg})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           opacity: i === bgIndex ? 0.22 : 0,
