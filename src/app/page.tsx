@@ -19,18 +19,16 @@ export const metadata: Metadata = {
 };
 
 /**
- * Premium one-pager landing.
+ * Landing page — elegant one-pager interactive resume.
  *
- * Quieter than /play — no scanlines, no vignette, no auto-anim sequencing.
- * The job here is to set up two clear paths: ▶ Play the résumé, ⬇ Read the CV.
- *
- * Section order:
- *   1. HomeHero         — name, tagline, three CTAs, stat strip
- *   2. WorldsPreview    — horizontal scrolling chapter cards → /play#id
- *   3. HomeSkills       — 9 skills grid; cells light up if collected via /play
- *   4. HomePress        — selected press strip
- *   5. HomeMarquee      — "Worked with / featured in" infinite tape
- *   6. HomeContact      — final CTA, mailto, hire panel
+ * Sections:
+ *   1. Nav (fixed)
+ *   2. Hero — name, tagline, CTAs, stats
+ *   3. Worlds Preview — horizontal scroll chapter cards
+ *   4. Skills — grouped skill tags
+ *   5. Press — feature strip
+ *   6. Marquee — companies ticker
+ *   7. Contact — final CTA
  */
 export default function HomePage() {
   return (

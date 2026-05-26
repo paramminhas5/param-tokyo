@@ -2,88 +2,59 @@
 
 import { COMPANIES } from "@/content/resume";
 
-/**
- * Infinite marquee of companies. CSS-only — no JS, no ResizeObserver.
- * Doubled list + 50% translate keyframe = seamless loop.
- *
- * Respects prefers-reduced-motion via the @media query in the keyframes block.
- */
 export function HomeMarquee() {
-  // Duplicate the list so the loop is seamless.
-  const tape = [...COMPANIES, ...COMPANIES];
+  const doubled = [...COMPANIES, ...COMPANIES];
 
   return (
     <section
       style={{
-        position: "relative",
-        padding: "clamp(2rem, 5vw, 3.5rem) 0",
-        background: "#050310",
-        borderTop: "1px solid rgba(240,236,228,0.06)",
-        borderBottom: "1px solid rgba(240,236,228,0.06)",
+        padding: "40px 0",
+        borderTop: "1px solid rgba(240, 236, 228, 0.06)",
         overflow: "hidden",
       }}
-      aria-label="Worked with"
     >
-      <p
+      <div
         style={{
           fontFamily: "var(--font-mono)",
-          fontSize: 9,
-          letterSpacing: "0.32em",
+          fontSize: 10,
+          letterSpacing: "0.2em",
           textTransform: "uppercase",
-          color: "rgba(240,236,228,0.45)",
-          textAlign: "center",
-          marginBottom: 18,
+          color: "rgba(240, 236, 228, 0.3)",
+          marginBottom: 20,
+          paddingLeft: "clamp(24px, 8vw, 120px)",
         }}
       >
-        ◤ Worked with · Featured in ◥
-      </p>
+        Worked with & featured in
+      </div>
 
       <div
         style={{
           display: "flex",
-          gap: 0,
-          width: "max-content",
-          animation: "pm-marquee 38s linear infinite",
-          willChange: "transform",
+          gap: 48,
+          animation: "marquee-scroll 30s linear infinite",
+          whiteSpace: "nowrap",
         }}
       >
-        {tape.map((c, i) => (
+        {doubled.map((name, i) => (
           <span
-            key={`${c}-${i}`}
+            key={i}
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 36,
-              padding: "0 28px",
               fontFamily: "var(--font-display)",
-              fontSize: "clamp(1.25rem, 2.6vw, 1.85rem)",
-              fontWeight: 600,
-              color: "rgba(240,236,228,0.55)",
-              letterSpacing: "-0.01em",
-              whiteSpace: "nowrap",
+              fontSize: "clamp(14px, 2vw, 18px)",
+              fontWeight: 500,
+              color: "rgba(240, 236, 228, 0.25)",
+              flexShrink: 0,
             }}
           >
-            {c}
-            <span
-              aria-hidden
-              style={{
-                width: 6,
-                height: 6,
-                background: "#fbbf24",
-                opacity: 0.5,
-              }}
-            />
+            {name}
           </span>
         ))}
       </div>
 
       <style>{`
-        @keyframes pm-marquee {
-          from { transform: translateX(0); }
-          to   { transform: translateX(-50%); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          [aria-label="Worked with"] > div { animation: none !important; }
+        @keyframes marquee-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
       `}</style>
     </section>

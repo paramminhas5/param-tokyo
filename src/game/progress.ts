@@ -1,34 +1,30 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { CHAPTERS } from "@/content/resume";
 
 /**
- * Global journey progress driven by window scroll.
- * - `worldIndex`: which chapter the hero is currently in (-1 = intro, CHAPTERS.length = outro).
- * - `worldProgress`: 0..1 inside that chapter section (drives hero X).
- * - `moving`: true for ~180ms after the last scroll delta (drives walk animation).
- *
- * The store is intentionally tiny. Each WorldStage registers its DOM section via
- * registerWorldEl(id, el); the listener computes which section currently contains
- * the viewport mid-line and writes a single snapshot to subscribers.
+ * Simplified scroll progress engine.
+ * Tracks which world section the viewport is in and progress within it.
  */
 
 export interface ProgressSnapshot {
-  worldIndex: number;     // -1 = intro, 0..CHAPTERS.length-1 = world, CHAPTERS.length = outro
+  worldIndex: number;
   worldId: string | null;
-  worldProgress: number;  // 0..1
-  totalProgress: number;  // 0..1 across the whole page
-  moving: boolean;
+  worldProgress: number;
+  totalProgress: number;
 }
 
 const initial: ProgressSnapshot = {
-  worldIndex: -1, worldId: null, worldProgress: 0, totalProgress: 0, moving: false,
+  worldIndex: -1,
+  worldId: null,
+  worldProgress: 0,
+  totalProgress: 0,
 };
 
 let snapshot: ProgressSnapshot = initial;
 const listeners = new Set<(s: ProgressSnapshot) => void>();
 const worldEls = new Map<string, HTMLElement>();
-let lastMoveTs = 0;
-let movingTimeout: number | null = null;
 let installed = false;
 
 export function registerWorldEl(id: string, el: HTMLElement | null) {
@@ -40,8 +36,9 @@ export function registerWorldEl(id: string, el: HTMLElement | null) {
 function install() {
   if (installed || typeof window === "undefined") return;
   installed = true;
+
   const recompute = () => {
-    const vhMid = window.innerHeight * 0.55; // hero stands a bit below center
+    const vhMid = window.innerHeight * 0.5;
     let bestIdx = -1;
     let bestId: string | null = null;
     let bestProgress = 0;
@@ -50,7 +47,6 @@ function install() {
       const el = worldEls.get(c.id);
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      // Section is "current" when the viewport mid-line is within it.
       if (rect.top <= vhMid && rect.bottom >= vhMid) {
         bestIdx = i;
         bestId = c.id;
@@ -59,90 +55,32 @@ function install() {
       }
     });
 
-    // Before first world → intro; after last → outro.
-    if (bestIdx === -1) {
-      const firstEl = worldEls.get(CHAPTERS[0].id);
-      if (firstEl) {
-        const r = firstEl.getBoundingClientRect();
-        if (r.top > vhMid) {
-          bestIdx = -1;
-          bestId = null;
-          bestProgress = 0;
-        } else {
-          bestIdx = CHAPTERS.length;
-          bestId = null;
-          bestProgress = 1;
-        }
-      }
-    }
-
     const doc = document.documentElement;
     const totalProgress = Math.max(
       0,
       Math.min(1, window.scrollY / Math.max(1, doc.scrollHeight - window.innerHeight))
     );
 
-    const prev = snapshot;
-    const moved =
-      prev.worldIndex !== bestIdx ||
-      Math.abs(prev.worldProgress - bestProgress) > 0.0005 ||
-      Math.abs(prev.totalProgress - totalProgress) > 0.0005;
-
-    if (moved) {
-      lastMoveTs = performance.now();
-      if (movingTimeout) window.clearTimeout(movingTimeout);
-      movingTimeout = window.setTimeout(() => {
-        snapshot = { ...snapshot, moving: false };
-        listeners.forEach((l) => l(snapshot));
-      }, 180);
-    }
-
     snapshot = {
       worldIndex: bestIdx,
       worldId: bestId,
       worldProgress: bestProgress,
       totalProgress,
-      moving: moved || performance.now() - lastMoveTs < 180,
     };
     listeners.forEach((l) => l(snapshot));
   };
 
   let raf = 0;
-  let lastScrollTime = 0;
-  const THROTTLE_MS = 16; // 60fps max
-  
   const onScroll = () => {
     if (raf) return;
-    const now = performance.now();
-    const timeSinceLastScroll = now - lastScrollTime;
-    
-    // Throttle to 16ms (60fps) for smoother performance
-    if (timeSinceLastScroll < THROTTLE_MS) {
-      raf = requestAnimationFrame(() => { 
-        raf = 0; 
-        lastScrollTime = performance.now();
-        recompute(); 
-      });
-    } else {
-      lastScrollTime = now;
-      raf = requestAnimationFrame(() => { raf = 0; recompute(); });
-    }
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      recompute();
+    });
   };
-  
+
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll, { passive: true });
-
-  // Keyboard advance: ↓/space scroll a screen; ↑ rewinds.
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === " ") {
-      e.preventDefault();
-      window.scrollBy({ top: window.innerHeight * 0.55, behavior: "smooth" });
-    } else if (e.key === "ArrowUp" || e.key === "PageUp") {
-      e.preventDefault();
-      window.scrollBy({ top: -window.innerHeight * 0.55, behavior: "smooth" });
-    }
-  });
-
   recompute();
 }
 
