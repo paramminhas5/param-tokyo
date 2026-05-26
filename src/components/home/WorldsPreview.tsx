@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CHAPTERS } from "@/content/resume";
 import { WORLDS } from "@/game/journey";
+import type { WorldArt } from "@/game/journey";
 
 /**
  * Horizontal scrollable chapter cards — links to /play#worldId
@@ -72,10 +73,10 @@ export function WorldsPreview() {
                 style={{
                   width: "100%",
                   aspectRatio: "3/4",
-                  backgroundImage: `url(${world?.poster})`,
+                  backgroundImage: `url(${world?.bg})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
-                  opacity: 0.7,
+                  opacity: 0.85,
                 }}
               />
               {/* Overlay */}
