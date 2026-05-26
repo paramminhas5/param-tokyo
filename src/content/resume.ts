@@ -62,11 +62,11 @@ export const SKILL_GROUPS: { title: string; items: string[] }[] = [
 ];
 
 export const PRESS = [
-  { outlet: "CNBC-TV18", title: "SoleSearch: Building India's sneaker culture from the ground up" },
-  { outlet: "YourStory", title: "From Bengaluru to boardroom: Param Minhas on 15 years of building" },
-  { outlet: "Inc42", title: "SoleSearch raises $795K to scale India's first sneaker marketplace" },
-  { outlet: "Economic Times", title: "Rannvijay Singha backs SoleSearch, India's streetwear-first platform" },
-  { outlet: "Quartic.ai", title: "Octo acquired — founding team joins Quartic.ai" },
+  { outlet: "CNBC-TV18", title: "SoleSearch: Building India's sneaker culture from the ground up", url: "https://www.cnbctv18.com" },
+  { outlet: "YourStory", title: "From Bengaluru to boardroom: Param Minhas on 15 years of building", url: "https://yourstory.com" },
+  { outlet: "Inc42", title: "SoleSearch raises $795K to scale India's first sneaker marketplace", url: "https://inc42.com" },
+  { outlet: "Economic Times", title: "Rannvijay Singha backs SoleSearch, India's streetwear-first platform", url: "https://economictimes.indiatimes.com" },
+  { outlet: "Quartic.ai", title: "Octo acquired — founding team joins Quartic.ai", url: "https://quartic.ai" },
 ];
 
 export const COMPANIES = [
@@ -92,6 +92,7 @@ export const CHAPTERS: Chapter[] = [
   },
   {
     id: "grp", index: 2, year: "2010", role: "Founding member", org: "GetRightPrice",
+
     cliff: "India's first price-comparison engine. Built in college. Angel-backed by Sidharth Rao.",
     hook: "India's first price-comparison engine. Angel-backed, built in college.",
     paragraphs: [
@@ -102,7 +103,7 @@ export const CHAPTERS: Chapter[] = [
     outcomes: ["Angel-backed by Sidharth Rao (Webchutney)", "Built catalog + crawl pipeline", "First price-comparison engine in India", "Learned data at scale"],
     skill: { name: "Data Pipelines", family: "Engineering", color: "#22d3ee" },
     builtOn: ["Self-taught"],
-    theme: { accent: "#22d3ee", ink: "#1a1a2e" },
+    theme: { accent: "#22d3ee", ink: "#081820" },
   },
   {
     id: "hab", index: 3, year: "2012–13", role: "Founder", org: "Hab Housing",
@@ -114,9 +115,9 @@ export const CHAPTERS: Chapter[] = [
       "Hit ₹1 crore revenue with zero external capital. Sold operations. The lesson: unit economics don't care about your vision — they care about your math.",
     ],
     outcomes: ["₹1Cr revenue", "Zero external capital", "Operations sold", "80+ properties managed", "Bootstrapping masterclass"],
-    skill: { name: "Negotiation", family: "Operations", color: "#e84393" },
+    skill: { name: "Negotiation", family: "Operations", color: "#f97316" },
     builtOn: ["Self-taught", "Data Pipelines"],
-    theme: { accent: "#e84393", ink: "#1a1a2e" },
+    theme: { accent: "#f97316", ink: "#1a1208" },
   },
   {
     id: "octo", index: 4, year: "2013–17", role: "Founding team · Director of Marketing", org: "Octo · Quartic.ai",
@@ -128,9 +129,9 @@ export const CHAPTERS: Chapter[] = [
       "Octo was acquired by Quartic.ai. Stayed on as Director of Marketing through the integration. First exit.",
     ],
     outcomes: ["First AI chatbot in India (2013)", "Octo acquired by Quartic.ai", "Director of Marketing post-acquisition", "Enterprise AI distribution", "First exit"],
-    skill: { name: "Conversational AI", family: "AI", color: "#22d3ee" },
+    skill: { name: "Conversational AI", family: "AI", color: "#a78bfa" },
     builtOn: ["Self-taught", "Data Pipelines"],
-    theme: { accent: "#22d3ee", ink: "#0a0a1e" },
+    theme: { accent: "#a78bfa", ink: "#0a0818" },
   },
   {
     id: "investopad", index: 5, year: "Post-Octo", role: "Partner · Growth & Tech", org: "Investopad",
@@ -142,9 +143,9 @@ export const CHAPTERS: Chapter[] = [
       "The lesson: pattern-matching across companies teaches judgment faster than running one. But the operator itch never goes away.",
     ],
     outcomes: ["Built Fund 0", "Hands-on with growth + tech", "Portfolio breadth: e-commerce, AI, fintech", "Judgment muscle built", "Both sides of the table"],
-    skill: { name: "Judgment", family: "Strategy", color: "#fbbf24" },
+    skill: { name: "Judgment", family: "Strategy", color: "#34d399" },
     builtOn: ["Self-taught", "Data Pipelines", "Negotiation", "Conversational AI"],
-    theme: { accent: "#fbbf24", ink: "#0a1a14" },
+    theme: { accent: "#34d399", ink: "#071a12" },
   },
   {
     id: "solesearch", index: 6, year: "2018–23", role: "Co-founder & CEO", org: "SoleSearch",
@@ -156,9 +157,9 @@ export const CHAPTERS: Chapter[] = [
       "Built the culture before the marketplace. CNBC-TV18, YourStory, Inc42 covered us. India's sneaker moment happened because someone decided to build it.",
     ],
     outcomes: ["$795K raised", "₹26cr+ yearly sales", "30+ live events", "350K+ community", "Retail in 2 cities", "CNBC-TV18 feature", "Rannvijay Singha partner"],
-    skill: { name: "Community + Ops", family: "Growth", color: "#e84393" },
+    skill: { name: "Community + Ops", family: "Growth", color: "#ff6b35" },
     builtOn: ["Self-taught", "Negotiation", "Judgment"],
-    theme: { accent: "#ff6b35", ink: "#1a0a10" },
+    theme: { accent: "#ff6b35", ink: "#1a0a00" },
   },
   {
     id: "fere", index: 7, year: "2024–25", role: "Growth & Marketing Partner", org: "Fere.ai",
@@ -170,9 +171,9 @@ export const CHAPTERS: Chapter[] = [
       "10M+ agent actions at launch. The thesis: the next wave of SaaS isn't software you use — it's software that acts.",
     ],
     outcomes: ["$1.3M raised (Ethereal Ventures)", "10M+ agent actions at launch", "AI-native GTM playbook", "Reunion with Octo co-founder", "Crypto + AI intersection"],
-    skill: { name: "AI Agents", family: "AI", color: "#22d3ee" },
+    skill: { name: "AI Agents", family: "AI", color: "#38bdf8" },
     builtOn: ["Self-taught", "Conversational AI", "Judgment", "Community + Ops"],
-    theme: { accent: "#22d3ee", ink: "#0a0a20" },
+    theme: { accent: "#38bdf8", ink: "#040d18" },
   },
   {
     id: "ccd", index: 8, year: "Now", role: "Founder", org: "Cats Can Dance",
@@ -184,9 +185,9 @@ export const CHAPTERS: Chapter[] = [
       "Cats Can Dance is proof that the loop closes. Strategy, creative, distribution — all one muscle now.",
     ],
     outcomes: ["Original music releases", "Live events + creative IP", "Pet-forward brand world", "Operator ↔ artist loop closed", "Brand building from scratch"],
-    skill: { name: "Music + Brand", family: "Creative", color: "#fbbf24" },
+    skill: { name: "Music + Brand", family: "Creative", color: "#ec4899" },
     builtOn: ["Self-taught", "Community + Ops"],
-    theme: { accent: "#ec4899", ink: "#1a1a2e" },
+    theme: { accent: "#ec4899", ink: "#180814" },
   },
   {
     id: "iterate", index: 9, year: "Now", role: "Founder", org: "Iterate",
@@ -198,8 +199,8 @@ export const CHAPTERS: Chapter[] = [
       "Iterate is the synthesis — every skill from every chapter converges. This is what compound experience looks like in practice.",
     ],
     outcomes: ["AI workflows for brand + growth", "Strategy + creative + tech unified", "15 years of operator instinct", "Every prior skill compounds here", "AI-native from day one"],
-    skill: { name: "Synthesis", family: "Strategy", color: "#e84393" },
+    skill: { name: "Synthesis", family: "Strategy", color: "#f59e0b" },
     builtOn: ["Self-taught", "Data Pipelines", "Negotiation", "Conversational AI", "Judgment", "Community + Ops", "AI Agents", "Music + Brand"],
-    theme: { accent: "#f59e0b", ink: "#1a1a2e" },
+    theme: { accent: "#f59e0b", ink: "#181005" },
   },
 ];
