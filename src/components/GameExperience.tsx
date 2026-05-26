@@ -15,9 +15,9 @@ import { CustomCursor } from "./CustomCursor";
  *
  * Total scroll height:
  *   Intro   1 × 100vh
- *   Worlds  9 × 300vh = 2700vh
+ *   Worlds  9 × 400vh = 3600vh
  *   Outro   ~120vh
- *   ≈ 2920vh
+ *   ≈ 3820vh
  *
  * Structure:
  *   CustomCursor  (fixed, colour-synced to world)
@@ -53,7 +53,7 @@ function PreloadManager() {
   const totalP = useTotalProgress();
 
   useEffect(() => {
-    const INTRO_W = 1, WORLD_W = 3;
+    const INTRO_W = 1, WORLD_W = 4;
     const total_W = INTRO_W + CHAPTERS.length * WORLD_W + 1;
     const currentIdx = Math.min(
       CHAPTERS.length - 1,

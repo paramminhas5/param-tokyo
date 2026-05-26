@@ -28,7 +28,7 @@ export function GlobalHud() {
 
   // ── Skill unlock math ─────────────────────────────────────────────────────
   useEffect(() => {
-    const INTRO_W = 1, WORLD_W = 3; // 300vh per world now
+    const INTRO_W = 1, WORLD_W = 4; // 400vh per world
     const total_W = INTRO_W + CHAPTERS.length * WORLD_W + 1;
 
     const next: typeof CHAPTERS[0]["skill"][] = [];
@@ -48,7 +48,7 @@ export function GlobalHud() {
   }, [totalP]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Current world accent (300vh per world) ────────────────────────────────
-  const INTRO_W = 1, WORLD_W = 3;
+  const INTRO_W = 1, WORLD_W = 4;
   const total_W = INTRO_W + CHAPTERS.length * WORLD_W + 1;
   const currentWorldIndex = Math.min(
     CHAPTERS.length - 1,
