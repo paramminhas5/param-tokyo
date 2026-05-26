@@ -244,7 +244,14 @@ export default function CvPage() {
           {PRESS.map((p, i) => (
             <div key={i} style={{ display: "flex", gap: 12, padding: "8px 0", borderBottom: "1px solid #0e082006", alignItems: "baseline" }}>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#0e082055", minWidth: 80, flexShrink: 0, fontWeight: 600 }}>{p.outlet}</span>
-              <span style={{ fontSize: 13, color: "#0e0820aa" }}>{p.title}</span>
+              {p.url ? (
+                <a href={p.url} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: 13, color: "#0e0820aa", textDecoration: "none", borderBottom: "1px solid #0e082022" }}>
+                  {p.title}
+                </a>
+              ) : (
+                <span style={{ fontSize: 13, color: "#0e0820aa" }}>{p.title}</span>
+              )}
             </div>
           ))}
         </section>
